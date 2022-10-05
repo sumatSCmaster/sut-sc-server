@@ -11,6 +11,8 @@ export const editCondominiumType = async (id: number, type: number) => {
     return { status: 200, message: 'condominio actualizado exitosamente', nuevoTipo: response };
   } catch (e: any) {
     throw { status: 500, message: errorMessageGenerator(e) || errorMessageExtractor(e) || e.message };
+  } finally {
+    client.release();
   }
 };
 
@@ -30,5 +32,7 @@ export const getCondominiumType = async (id: number) => {
       status: 500,
       message: errorMessageGenerator(e) || errorMessageExtractor(e) || e.message,
     };
+  } finally {
+    client.release();
   }
 };

@@ -189,6 +189,8 @@ export const getAELiq = async() => {
     return {AE: AELiqPends.map(liq => liq.datos), status: 200}
   } catch(e) {
     throw {message: e.message, status: 500}
+  } finally {
+    client.release();
   }
 }
 

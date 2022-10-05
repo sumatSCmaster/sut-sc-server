@@ -56,6 +56,8 @@ export const getMenu = async (user): Promise<Institucion[] | undefined> => {
       error: errorMessageExtractor(error),
       message: errorMessageGenerator(error) || error.message || 'Error al obtener los tramites',
     };
+  } finally {
+    if(client) client.release();
   }
 };
 

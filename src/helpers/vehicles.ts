@@ -340,6 +340,8 @@ export const linkVehicle = async(placa: string, id: number, isRim: boolean) => {
   } catch(e) {
     await client.query('ROLLBACK');
     throw {status: 500, message: e.message}
+  } finally {
+    client.release();
   }
 } 
 
@@ -354,6 +356,8 @@ export const unlinkVehicle = async(idVehiculo: number) => {
   } catch(e) {
     await client.query('ROLLBACK');
     throw {status: 500, message: e.message}
+  } finally {
+    client.release();
   }
 } 
 /**

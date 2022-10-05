@@ -159,6 +159,8 @@ export const editCondominiumApart = async (id: number, apartments: number) => {
     return { status: 200, message: 'condominio actualizado exitosamente', nuevoApart: response };
   } catch (e: any) {
     throw { status: 500, message: errorMessageGenerator(e) || errorMessageExtractor(e) || e.message };
+  } finally {
+    client.release();
   }
 };
 

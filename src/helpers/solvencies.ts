@@ -68,7 +68,9 @@ export const getSolvencyBCandidates = async ({tipoDocumento, documento}) => {
     // }
         const result = {contribuyente: solvencyContrInfo, sucursales: [...solvencyRIMInfo]}
         return {status: 200, data: result};
-    } catch(e) {throw {status: 500, message: e.message}}
+    } catch(e) {throw {status: 500, message: e.message}} finally {
+        client.release();
+      }
 }
 
 export const getSolvencyACandidates = async ({tipoDocumento, documento}) => {
@@ -92,7 +94,9 @@ export const getSolvencyACandidates = async ({tipoDocumento, documento}) => {
         const newestSolvencyRIMInfo = newSolvencyRIMInfo.filter(rim => rim.inmuebles);
         const result = {contribuyente: solvencyContrInfo || undefined, sucursales: [...newestSolvencyRIMInfo]}
         return {status: 200, data: result};
-    } catch(e) {throw {status: 500, message: e.message}}
+    } catch(e) {throw {status: 500, message: e.message}} finally {
+        client.release();
+      }
 }
 
 export const createSolvencyAB = async ({contribuyente, sucursal, costo}, user, tipo) => {
