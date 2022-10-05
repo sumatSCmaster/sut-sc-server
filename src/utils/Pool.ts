@@ -11,7 +11,7 @@ export default class Pool {
       const opt: PoolConfig = {
         connectionString: process.env.DATABASE_URL,
         ssl: { rejectUnauthorized: false },
-        max: 500,
+        max: 600,
         min: 100,
         // query_timeout: 15000,
       };
