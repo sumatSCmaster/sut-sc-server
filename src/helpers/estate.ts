@@ -5,6 +5,7 @@ import { PoolClient } from 'pg';
 import { Tramite, Inmueble } from '@root/interfaces/sigt';
 import moment from 'moment';
 import { mainLogger } from '@utils/logger';
+import { createCertificate, createCertificateBuffers } from './receipt';
 
 const pool = Pool.getInstance();
 
@@ -536,6 +537,24 @@ export const updateEstateDate = async ({ id, date, rim, taxpayer }) => {
     client.release();
   }
 };
+
+export const generateCodCat = async (data, user) => {
+  const client = await pool.connect();
+  try {
+    // const {codCat, datos, datosFisicos, linderos, oldCodCat, perimetro} = data;
+    const property = (await client.query('SELECT id_inmueble AS id, metros_terreno AS "superficieTerreno", metros_construccion AS "superficieConstruccion" FROM inmueble_urbano JOIN impuesto.avaluo_inmueble USING (id_inmueble) WHERE id_inmueble = $1', [data.inmueble])).rows[0];
+    const userName = (await client.query('SELECT nombre_completo FROM usuario WHERE id_usuario = $1', [user.id])).rows[0]?.nombre_completo
+    const bucketKey = `//hacienda/CATASTRO/${property.id}/ceritifcado.pdf`;
+    data.property = property;
+    data.autor = userName;
+    console.log(data.datos, 'MASTER GENERATECODCAT');
+    const buffers = await createCertificateBuffers([data], 'catastro', bucketKey);
+    const url = await createCertificate(buffers, bucketKey);
+    return {status: 200, url}
+  } catch(e) {
+    throw {status: 500, message: e.message};
+  }
+}
 
 export const linkCommercial = async ({ codCat, rim, relacion }) => {
   const client = await pool.connect();

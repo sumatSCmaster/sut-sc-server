@@ -14,6 +14,7 @@ import {
   updateEstateDate,
   unlinkCommercial,
   unlinkNatural,
+  generateCodCat,
 } from '@helpers/estate';
 import { authenticate } from 'passport';
 import { mainLogger } from '@utils/logger';
@@ -45,6 +46,12 @@ router.post('/', authenticate('jwt'), async (req, res) => {
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
 });
+
+router.post('/generateCodCat', authenticate('jwt'), async (req, res) => {
+  const [err, data] = await fulfill(generateCodCat(req.body, req.user))
+  if (err) res.status(500).json(err);
+  if (data) res.status(data.status).json(data);
+})
 
 router.get('/sedemat/natural', async (req, res) => {
   const [error, data] = await fulfill(taxPayerEstatesByNaturalCont(req.query));
