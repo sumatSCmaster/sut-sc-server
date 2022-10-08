@@ -67,7 +67,7 @@ export const getDataForDefinitiveDeclaration = async ({ document, reference, doc
         el.datos.desglose = await Promise.all(
           el.datos.desglose.map(async (d) => {
             const aforo = (await client.query(queries.GET_ECONOMIC_ACTIVITY_BY_ID, [d.aforo])).rows[0];
-            const exonerado = await isExonerated({ branch: 112, contributor: branch?.id_registro_municipal, activity: aforo.id_actividad_economica, startingDate }, client);
+            const exonerado = await isExonerated({ branch: '3.01.02.07.00.000.00', contributor: branch?.id_registro_municipal, activity: aforo.id_actividad_economica, startingDate }, client);
             return {
               id: aforo.id_actividad_economica,
               minTrib: Math.round(aforo.minimo_tributable) * PETRO,
@@ -379,10 +379,10 @@ const createReceiptForAEApplication = async (payload: { liquidaciones; contribuy
 };
 
 const codigosRamo = {
-  AE: 112,
-  SM: 122,
+  AE: '3.01.02.07.00.000.00',
+  SM: '3.01.03.54.00.000.00',
   MUL: 501,
-  PP: 114,
-  IU: 111,
+  PP: '3.01.02.09.00.000.00',
+  IU: '3.01.02.05.00.000.00',
   RD0: 915,
 };

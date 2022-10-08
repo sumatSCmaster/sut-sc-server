@@ -18,11 +18,11 @@ const dev = process.env.NODE_ENV !== 'production';
 const pool = Pool.getInstance();
 
 const codigosRamo = {
-  AE: 112,
-  SM: 122,
+  AE: '3.01.02.07.00.000.00',
+  SM: '3.01.03.54.00.000.00',
   MUL: 501,
-  PP: 114,
-  IU: 111,
+  PP: '3.01.02.09.00.000.00',
+  IU: '3.01.02.05.00.000.00',
   RD0: 915,
 };
 
@@ -566,10 +566,10 @@ const addMonths = (date: Date, months): Date => {
 // };
 
 const branchNames = {
-  AE: 'ACTIVIDADES ECONOMICAS COMERCIALES, INDUSTRIALES, DE SERVICIO Y SIMILARES',
+  AE: 'PATENTE DE INDUSTRIA Y COMERCIO',
   SM: 'ASEO DOMICILIARIO',
-  IU: 'PROPIEDAD INMOBILIARIA',
-  PP: 'PROPAGANDAS Y AVISOS COMERCIALES',
+  IU: 'INMUEBLES URBANOS',
+  PP: 'PROPAGANDA COMERCIAL',
   SAE: 'TASA ADMINISTRATIVA DE SOLVENCIA DE AE',
   RD0: 'RETENCIONES DECRETO 048',
 };

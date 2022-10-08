@@ -1012,7 +1012,7 @@ WHERE rm.codigo = $1 AND l.id_registro_municipal = $2 AND EXTRACT('year' FROM l.
     FROM impuesto.solicitud s INNER JOIN impuesto.liquidacion l USING (id_solicitud)
     INNER JOIN impuesto.subramo sr USING (id_subramo)
     INNER JOIN impuesto.ramo r USING (id_ramo)
-    WHERE id_contribuyente = $1 AND r.codigo IN ('112','111','114','122')
+    WHERE id_contribuyente = $1 AND r.codigo IN ('3.01.02.07.00.000.00','3.01.02.05.00.000.00','3.01.02.09.00.000.00','3.01.03.54.00.000.00')
     GROUP BY id_ramo) x
     );`,
   ALL_YEAR_SETTLEMENTS_EXISTS_FOR_LAST_YEAR_AE_DECLARATION: `SELECT * FROM (SELECT s.id_solicitud AS id,
@@ -1061,7 +1061,7 @@ WHERE rm.codigo = $1 AND l.id_registro_municipal = $2 AND EXTRACT('year' FROM l.
     FROM impuesto.liquidacion l
     INNER JOIN impuesto.subramo sr USING (id_subramo)
     INNER JOIN impuesto.ramo r USING (id_ramo)
-    WHERE id_registro_municipal = $1 AND r.codigo IN ('112','111','114','122')
+    WHERE id_registro_municipal = $1 AND r.codigo IN ('3.01.02.07.00.000.00','3.01.02.05.00.000.00','3.01.02.09.00.000.00','3.01.03.54.00.000.00')
     GROUP BY id_ramo) x
     );`,
   GET_LAST_SETTLEMENT_FOR_CODE_AND_RIM:
@@ -1311,7 +1311,7 @@ l.id_subramo = sr.id_subramo INNER JOIN impuesto.ramo rm ON sr.id_ramo = rm.id_r
 
   //REPORTES
   GET_IDR_DATA: `WITH liquidaciones_vigentes AS (
-    SELECT CASE WHEN r.codigo = '112' THEN '3.01.02.07.00' WHEN r.codigo = '111' THEN '3.01.02.05.00' WHEN r.codigo = '122' THEN '3.01.03.54.00' WHEN r.codigo = '5000' THEN '3.01.02.08.00' WHEN r.codigo = '114' THEN '3.01.02.09.00' ELSE r.codigo END AS codigo, ROUND((monto_petro * (CASE WHEN id_subramo = 10 THEN (l.datos#>>'{valorPetro}')::DECIMAL ELSE (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO') END)), 2) AS monto_en_bs, CASE WHEN (id_subramo BETWEEN 793 AND 798 OR id_subramo = 10) THEN 'ACTIVIDADES ECONOMICAS' WHEN id_subramo IN (823, 824) THEN 'SOLVENCIAS' ELSE r.descripcion END AS descripcion 
+    SELECT CASE WHEN r.codigo = '3.01.02.07.00.000.00' THEN '3.01.02.07.00' WHEN r.codigo = '111' THEN '3.01.02.05.00' WHEN r.codigo = '122' THEN '3.01.03.54.00' WHEN r.codigo = '5000' THEN '3.01.02.08.00' WHEN r.codigo = '114' THEN '3.01.02.09.00' ELSE r.codigo END AS codigo, ROUND((monto_petro * (CASE WHEN id_subramo = 10 THEN (l.datos#>>'{valorPetro}')::DECIMAL ELSE (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO') END)), 2) AS monto_en_bs, CASE WHEN (id_subramo BETWEEN 793 AND 798 OR id_subramo = 10) THEN 'ACTIVIDADES ECONOMICAS' WHEN id_subramo IN (823, 824) THEN 'SOLVENCIAS' ELSE r.descripcion END AS descripcion 
     FROM impuesto.solicitud AS s 
     JOIN impuesto.liquidacion AS l USING (id_solicitud) 
     JOIN impuesto.subramo AS sub USING(id_subramo) 
@@ -1697,7 +1697,7 @@ ORDER BY razon_social;`,
       WHERE solicitud.id_contribuyente IN (SELECT id_contribuyente FROM impuesto.condominio)
       GROUP BY r.codigo, sub.subindice, r.descripcion, sub.descripcion
       ORDER BY ramo)) x
-        WHERE codigo != '915' AND codigo IN ('122', '111')
+        WHERE codigo != '915' AND codigo IN ('3.01.03.54.00.000.00', '3.01.02.05.00.000.00')
         GROUP BY ramo, descripcion, codigo;`,
   GET_LIQUIDATED_CONDO: `SELECT CONCAT(r.codigo, '.', sub.subindice) AS ramo, CONCAT(r.descripcion, ' - ', sub.descripcion) AS descripcion, r.codigo, COUNT(l.id_liquidacion) as "cantidadLiq", SUM(CASE WHEN monto IS NOT NULL THEN monto ELSE (monto_petro * (SELECT valor_en_bs FROM valor WHERE descripcion = 'PETRO')) END) as liquidado 
   FROM (SELECT *, s.id_solicitud as idsoli  FROM impuesto.liquidacion l
@@ -1710,7 +1710,7 @@ ORDER BY razon_social;`,
   se ON l.idsoli = se.id_solicitud_q
   RIGHT JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo 
   INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo 
-  WHERE codigo != '915' AND codigo IN ('122', '111')
+  WHERE codigo != '915' AND codigo IN ('3.01.03.54.00.000.00', '3.01.02.05.00.000.00')
   GROUP BY r.codigo, sub.subindice, r.descripcion, sub.descripcion
   ORDER BY ramo;`,
   GET_LIQUIDATED_CONDO_DISCLOSED: `SELECT CONCAT (data.tipo_documento,data.documento) AS Documento, data.razon_social AS RazonSocial, 
@@ -2495,7 +2495,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
           se ON l.id_solicitud = se.id_solicitud_q
           RIGHT JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo
           INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo
-          WHERE r.codigo NOT IN ('112','111','122','114')
+          WHERE r.codigo NOT IN ('3.01.02.07.00.000.00','3.01.02.05.00.000.00','3.01.03.54.00.000.00','3.01.02.09.00.000.00')
           GROUP BY ramo
           ORDER BY ramo)
       UNION
@@ -2506,7 +2506,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
         INNER JOIN distinct_liq_q l USING (id_solicitud)
         RIGHT JOIN impuesto.subramo sub ON sub.id_subramo = l.id_subramo
         INNER JOIN Impuesto.ramo r ON r.id_ramo = sub.id_ramo
-        WHERE r.codigo NOT IN ('112','111','122','114')
+        WHERE r.codigo NOT IN ('3.01.02.07.00.000.00','3.01.02.05.00.000.00','3.01.03.54.00.000.00','3.01.02.09.00.000.00')
         GROUP BY ramo
         ORDER BY ramo)) x 
           GROUP BY ramo;`,

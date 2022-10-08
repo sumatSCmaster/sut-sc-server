@@ -48,13 +48,13 @@ const idTiposSolicitud = {
 const AE_START_YEAR = 2020;
 
 export const codigosRamo = {
-  AE: 112,
-  SM: 122,
-  PP: 114,
+  AE: '3.01.02.07.00.000.00',
+  SM: '3.01.03.54.00.000.00',
+  PP: '3.01.02.09.00.000.00',
   MUL: 501,
-  IU: 111,
+  IU: '3.01.02.05.00.000.00',
   RD0: 915,
-  VH: 5000
+  VH: '3.01.02.08.00.000.00'
 };
 const formatCurrency = (number: number) => new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2 }).format(number);
 
@@ -3827,7 +3827,7 @@ export const addRebateForDeclaration = async ({ process, user }) => {
     const { rebajado, id_solicitud: idSolicitud, id_contribuyente: contribuyente } = (await client.query(queries.GET_APPLICATION_BY_ID, [id])).rows[0];
     if (rebajado) throw { status: 403, message: 'Esta solicitud ya ha sido rebajada anteriormente' };
     const hasAE = (
-      await client.query(`SELECT * FROM impuesto.liquidacion l INNER JOIN impuesto.subramo USING (id_subramo) INNER JOIN impuesto.ramo r USING (id_ramo) WHERE l.id_solicitud = $1 AND r.codigo = '112' AND l.monto_petro > 0`, [idSolicitud])
+      await client.query(`SELECT * FROM impuesto.liquidacion l INNER JOIN impuesto.subramo USING (id_subramo) INNER JOIN impuesto.ramo r USING (id_ramo) WHERE l.id_solicitud = $1 AND r.codigo = '3.01.02.07.00.000.00' AND l.monto_petro > 0`, [idSolicitud])
     ).rows;
     if (!hasAE.length) throw { status: 403, message: 'La solicitud no posee liquidaciones de Actividad Económica' };
     const nroLiquidaciones = hasAE.length;
@@ -4863,7 +4863,7 @@ const createReceiptForIUApplication = async ({ gticPool, pool, user, application
           QR: linkQr,
           moment: require('moment'),
           fecha: moment().format('MM-DD-YYYY'),
-          titulo: 'CERTIFICADO POR PROPIEDAD INMOBILIARIA',
+          titulo: 'CERTIFICADO POR INMUEBLES URBANOS',
           institucion: 'HACIENDA',
           datos: {
             mes: moment(breakdownData[0].fecha_vencimiento).get('month') + 1,
@@ -6217,10 +6217,10 @@ const breakdownCases = switchcase({
 })(null);
 
 const branchNames = {
-  AE: 'ACTIVIDADES ECONOMICAS COMERCIALES, INDUSTRIALES, DE SERVICIO Y SIMILARES',
+  AE: 'PATENTE DE INDUSTRIA Y COMERCIO',
   SM: 'ASEO DOMICILIARIO',
-  IU: 'PROPIEDAD INMOBILIARIA',
-  PP: 'PROPAGANDAS Y AVISOS COMERCIALES',
+  IU: 'INMUEBLES URBANOS',
+  PP: 'PROPAGANDA COMERCIAL',
   SAE: 'TASA ADMINISTRATIVA DE SOLVENCIA DE AE',
 };
 
