@@ -4478,7 +4478,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
           moment: require('moment'),
           fecha: currentDate,
           tipo: 'SM',
-          titulo: 'FACTURA POR SERVICIOS MUNICIPALES',
+          titulo: 'FACTURA POR ASEO DOMICILIARIO',
           institucion: 'HACIENDA',
           datos: {
             nroSolicitud: application.id,
@@ -4522,7 +4522,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             interesesMoratorio: '0.00 Bs', // TODO: Intereses moratorios
             estatus: 'PAGADO',
             esAgenteSENIAT: breakdownJoin[0].datos.esAgenteSENIAT || undefined,
-            observacion: 'Pago por Servicios Municipales',
+            observacion: 'Pago por ASEO DOMICILIARIO',
             totalLiq: `${formatCurrency(totalMonto)} Bs`,
             totalRecaudado: `${formatCurrency(totalMonto)} Bs`,
             totalCred: `0.00 Bs`, // TODO: Credito fiscal
@@ -4542,7 +4542,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
             moment: require('moment'),
             fecha: currentDate,
             tipo: 'SM',
-            titulo: 'FACTURA POR SERVICIOS MUNICIPALES',
+            titulo: 'FACTURA POR ASEO DOMICILIARIO',
             institucion: 'HACIENDA',
             datos: {
               nroSolicitud: application.id,
@@ -4588,7 +4588,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
               interesesMoratorio: '0.00 Bs', // TODO: Intereses moratorios
               estatus: 'PAGADO',
               esAgenteSENIAT: breakdownJoin[0].datos.esAgenteSENIAT || undefined,
-              observacion: 'Pago por Servicios Municipales',
+              observacion: 'Pago por ASEO DOMICILIARIO',
               totalLiq: `${formatCurrency(totalMonto)} Bs`,
               totalRecaudado: `${formatCurrency(totalMonto)} Bs`,
               totalCred: `0.00 Bs`, // TODO: Credito fiscal
@@ -4607,7 +4607,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
         QR: linkQr,
         moment: require('moment'),
         fecha: currentDate,
-        titulo: 'FACTURA POR SERVICIOS MUNICIPALES',
+        titulo: 'FACTURA POR ASEO DOMICILIARIO',
         institucion: 'HACIENDA',
         datos: {
           nroSolicitud: application.id,
@@ -4638,7 +4638,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
           montoTotalImpuesto: `${formatCurrency(totalMonto)} Bs`,
           interesesMoratorio: '0.00 Bs', // TODO: Intereses moratorios
           estatus: 'PAGADO',
-          observacion: 'Pago por Servicios Municipales',
+          observacion: 'Pago por ASEO DOMICILIARIO',
           totalLiq: `${formatCurrency(totalMonto)} Bs`,
           totalRecaudado: `${formatCurrency(totalMonto)} Bs`,
           totalCred: `0.00 Bs`, // TODO: Credito fiscal
@@ -6218,7 +6218,7 @@ const breakdownCases = switchcase({
 
 const branchNames = {
   AE: 'ACTIVIDADES ECONOMICAS COMERCIALES, INDUSTRIALES, DE SERVICIO Y SIMILARES',
-  SM: 'SERVICIOS MUNICIPALES',
+  SM: 'ASEO DOMICILIARIO',
   IU: 'PROPIEDAD INMOBILIARIA',
   PP: 'PROPAGANDAS Y AVISOS COMERCIALES',
   SAE: 'TASA ADMINISTRATIVA DE SOLVENCIA DE AE',
@@ -6242,7 +6242,7 @@ const breakdownCaseHandler = (settlementType, breakdown) => {
   const payload = switchcase({
     'AE': { aforo: breakdown.aforo, montoDeclarado: breakdown.montoDeclarado, montoCobrado: breakdown.montoCobrado, descuento: +breakdown.descuento },
     'SM': { inmueble: breakdown.inmueble, montoAseo: +breakdown.montoAseo, montoGas: breakdown.montoGas, descuento: +breakdown.descuento },
-    'SERVICIOS MUNICIPALES': { inmueble: breakdown.inmueble, montoAseo: +breakdown.montoAseo, montoGas: +breakdown.montoGas, descuento: +breakdown.descuento },
+    'ASEO DOMICILIARIO': { inmueble: breakdown.inmueble, montoAseo: +breakdown.montoAseo, montoGas: +breakdown.montoGas, descuento: +breakdown.descuento },
     'IU': { inmueble: breakdown.inmueble, monto: breakdown.monto, descuento: +breakdown.descuento },
     'PP': { subarticulo: breakdown.subarticulo, monto: breakdown.monto, cantidad: breakdown.cantidad, descuento: +breakdown.descuento },
     'SAE': { monto: breakdown.monto },

@@ -38,7 +38,7 @@ export const getSolvencyBCandidates = async ({tipoDocumento, documento}) => {
     //     }));
     //     console.log(solvencyRIMInfo, 'MASTER SOLVENCY 2')
     //     solvencyRIMInfo = solvencyRIMInfo.filter(rim => rim);
-    //     //Validacion que los rim esten al dia con servicios municipales
+    //     //Validacion que los rim esten al dia con ASEO DOMICILIARIO
     //     await Promise.all(solvencyRIMInfo.map(async rim => {
     //         const upToDate = await client.query(`SELECT * FROM impuesto.liquidacion JOIN impuesto.solicitud USING(id_solicitud) WHERE aprobado = true AND id_registro_municipal = $1 AND id_subramo = 108 AND datos#>>'{fecha, month}' = $2 AND datos#>>'{fecha, year}' = $3`, [rim.id_registro_municipal, pastMonth, year]);
     //         if (!(upToDate.rowCount > 0)) return undefined;
