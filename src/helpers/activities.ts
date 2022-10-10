@@ -37,7 +37,7 @@ export const getSMActivities = async () => {
     const smActivities = (await client.query(queries.GET_SM_ACTIVITIES)).rows;
     return {status: 200, smActivities}
   } catch(e) {
-    throw {status: 500, message: e.message || 'Error al obteener tabulador de servicios municipales'}
+    throw {status: 500, message: e.message || 'Error al obteener tabulador de ASEO DOMICILIARIO'}
   } finally {
     client.release();
   }

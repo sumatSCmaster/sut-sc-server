@@ -87,7 +87,7 @@ export const createScale = async ({ description, tariff }) => {
     await client.query('BEGIN');
     const scale = (await client.query('INSERT INTO impuesto.baremo (descripcion, indicador) VALUES ($1, $2) RETURNING *', [description, tariff])).rows[0];
     await client.query('COMMIT');
-    return { status: 200, message: 'Nuevo valor del baremo de servicios municipales agregado', baremo: { id: scale.id_baremo, descripcion: scale.descripcion, indicador: scale.indicador } };
+    return { status: 200, message: 'Nuevo valor del baremo de ASEO DOMICILIARIO agregado', baremo: { id: scale.id_baremo, descripcion: scale.descripcion, indicador: scale.indicador } };
   } catch (error) {
     client.query('ROLLBACK');
     mainLogger.error(error);

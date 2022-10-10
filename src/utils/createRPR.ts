@@ -74,7 +74,7 @@ export const createRPR = async (id: string, payload: { from: Date; to: Date; alc
 
     let ivaSM: any = {
       id: 53,
-      ramo: '122',
+      ramo: '3.01.03.54.00.000.00',
       descripcion: 'IVA SM',
       descripcion_corta: null,
       subRamo: [
@@ -87,9 +87,9 @@ export const createRPR = async (id: string, payload: { from: Date; to: Date; alc
         //   cantidadLiq: 0,
         // },
         {
-          ramo: '122.ASEO',
+          ramo: '3.01.03.54.00.000.00.ASEO',
           descripcion: 'IVA SM - IVA ASEO',
-          codigo: '122',
+          codigo: '3.01.03.54.00.000.00',
           ...(await client.query(queries.GET_SM_IVA_IMAU, [payload.from, payload.to])).rows[0],
           liquidado: 0,
           cantidadLiq: 0,
@@ -100,7 +100,7 @@ export const createRPR = async (id: string, payload: { from: Date; to: Date; alc
     ivaSM.ingresadoTotal = ivaSM.subRamo.reduce((prev, next) => prev + +next.ingresado, 0);
     ivaSM.cantidadIngTotal = ivaSM.subRamo.reduce((prev, next) => prev + +next.cantidadIng, 0);
 
-    final['122'] = final['122'].concat(ivaSM.subRamo);
+    final['3.01.03.54.00.000.00'] = final['3.01.03.54.00.000.00'].concat(ivaSM.subRamo);
 
     branches = branches
       .map((branch) => {

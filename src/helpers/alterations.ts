@@ -34,7 +34,7 @@ export const getAEDeclarationsForAlteration = async ({ document, reference, docT
         el.datos.desglose = await Promise.all(
           el.datos.desglose.map(async (d) => {
             const aforo = (await client.query(queries.GET_ECONOMIC_ACTIVITY_BY_ID, [d.aforo])).rows[0];
-            const exonerado = await isExonerated({ branch: 112, contributor: branch?.id_registro_municipal, activity: aforo.id_actividad_economica, startingDate }, client);
+            const exonerado = await isExonerated({ branch: '3.01.02.07.00.000.00', contributor: branch?.id_registro_municipal, activity: aforo.id_actividad_economica, startingDate }, client);
             return {
               id: aforo.id_actividad_economica,
               minimoTributable: Math.round(aforo.minimo_tributable) * PETRO,
@@ -139,9 +139,9 @@ export const alterateAESettlements = async ({ settlements, type }) => {
 };
 
 const branchNames = {
-  AE: 'ACTIVIDADES ECONOMICAS COMERCIALES, INDUSTRIALES, DE SERVICIO Y SIMILARES',
-  SM: 'SERVICIOS MUNICIPALES',
-  IU: 'PROPIEDAD INMOBILIARIA',
-  PP: 'PROPAGANDAS Y AVISOS COMERCIALES',
+  AE: 'PATENTE DE INDUSTRIA Y COMERCIO',
+  SM: 'ASEO DOMICILIARIO',
+  IU: 'INMUEBLES URBANOS',
+  PP: 'PROPAGANDA COMERCIAL',
   SAE: 'TASA ADMINISTRATIVA DE SOLVENCIA DE AE',
 };

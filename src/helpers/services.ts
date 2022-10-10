@@ -61,14 +61,14 @@ export const getMunicipalServicesByContributor = async ({ reference, document, d
         };
       })
     );
-    return { status: 200, message: 'Servicios municipales obtenidos por contribuyente', inmuebles: res };
+    return { status: 200, message: 'ASEO DOMICILIARIO obtenidos por contribuyente', inmuebles: res };
   } catch (error) {
     client.query('ROLLBACK');
     mainLogger.error(error);
     throw {
       status: 500,
       error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || error.message || 'Error al obtener los servicios municipales del contribuyente',
+      message: errorMessageGenerator(error) || error.message || 'Error al obtener los ASEO DOMICILIARIO del contribuyente',
     };
   } finally {
     client.release();
@@ -271,7 +271,7 @@ export const createMunicipalServicesScale = async ({ description, tariff }) => {
     await client.query('BEGIN');
     const scale = (await client.query('INSERT INTO impuesto.baremo_servicio_municipal (descripcion, indicador) VALUES ($1, $2) RETURNING *', [description, tariff])).rows[0];
     await client.query('COMMIT');
-    return { status: 200, message: 'Nuevo valor del baremo de servicios municipales agregado', baremo: { id: scale.id_baremo, descripcion: scale.descripcion, indicador: scale.indicador } };
+    return { status: 200, message: 'Nuevo valor del baremo de ASEO DOMICILIARIO agregado', baremo: { id: scale.id_baremo, descripcion: scale.descripcion, indicador: scale.indicador } };
   } catch (error) {
     client.query('ROLLBACK');
     mainLogger.error(error);
