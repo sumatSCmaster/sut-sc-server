@@ -28,6 +28,8 @@ block header
 block title
 block content
   div#planilla.solvencia
+    div(style={display: '-webkit-flex', 'align-items': 'center', 'justify-content': 'flex-start', margin: '15px 0'})
+        h2 Nro: &nbsp;#{datos.correlativo}&nbsp;
     div(style={'margin-bottom':'25px','margin-top':'25px'}).center
         h3 El Intendente Municipal Tributario hace constar que
     div
@@ -36,16 +38,13 @@ block content
           p
             b El Contribuyente:
             span &nbsp;#{datos.contribuyente.razon_social}&nbsp;
-      each cedula in datos.cedulaList
+      each cedulas in datos.cedulaList
         .tr
-          .td
-            p
-              b C.I./R.I.F:
-              span &nbsp;#{cedula[0].tipoDocumento} #{cedula[0].cedulaORif}&nbsp;
-          .td
-            p
-              b C.I./R.I.F:
-              span &nbsp;#{cedula[1].tipoDocumento} #{cedula[1].cedulaORif}&nbsp;
+          each cedula in cedulas
+            .td
+              p
+                b C.I./R.I.F:
+                span &nbsp;#{cedula.tipoDocumento} #{cedula.cedulaORif}&nbsp;
       .tr
         .td
           p
@@ -65,16 +64,13 @@ block content
           .td
             p
               b(style={'text-decoration': 'underline', 'font-size':'20px'}) Inmobiliario
-        each codCat in datos.codCatList
+        each codCats in datos.codCatList
           .tr
+            each codCat in codCats
             .td
               p
                 b Codigo Catastral:
-                span &nbsp;#{codCat[0].codCat}&nbsp;
-            .td
-              p
-                b Codigo Catastral:
-                span &nbsp;#{codCat[1].codCat}&nbsp;
+                span &nbsp;#{codCat.codCat}&nbsp;
         .tr
           .td
             p
