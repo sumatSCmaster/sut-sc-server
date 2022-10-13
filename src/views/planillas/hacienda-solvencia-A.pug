@@ -37,11 +37,18 @@ block content
             b El Contribuyente:
             span &nbsp;#{datos.contribuyente.razon_social}&nbsp;
       .tr
-        each cedula in datos.cedulaList
-          .td
-            p
-              b C.I./R.I.F:
-              span &nbsp;#{cedula.tipoDocumento} #{cedula.cedulaORif}&nbsp;
+        each cedula, index in datos.cedulaList
+          if (index + 1)%3 === 0
+            .tr
+              .td
+                p
+                  b C.I./R.I.F:
+                  span &nbsp;#{cedula.tipoDocumento} #{cedula.cedulaORif}&nbsp;
+          else 
+            .td
+              p
+                b C.I./R.I.F:
+                span &nbsp;#{cedula.tipoDocumento} #{cedula.cedulaORif}&nbsp;
       .tr
         .td
           p
@@ -62,11 +69,18 @@ block content
             p
               b(style={'text-decoration': 'underline', 'font-size':'20px'}) Inmobiliario
         .tr
-          each codCat in datos.codCatList
-            .td
-              p
-                b Codigo Catastral:
-                span &nbsp;#{codCat.codCat}&nbsp;
+          each codCat, index in datos.codCatList
+            if (index + 1)%3 === 0
+              .tr
+                .td
+                  p
+                    b Codigo Catastral:
+                    span &nbsp;#{codCat.codCat}&nbsp;
+            else 
+              .td
+                p
+                  b Codigo Catastral:
+                  span &nbsp;#{codCat.codCat}&nbsp;
         .tr
           .td
             p
