@@ -37,10 +37,11 @@ block content
             b El Contribuyente:
             span &nbsp;#{datos.contribuyente.razon_social}&nbsp;
       .tr
-        .td
-          p
-            b C.I./R.I.F:
-            span &nbsp;#{datos.contribuyente.documento}&nbsp;
+        each cedula in datos.cedulaList
+          .td
+            p
+              b C.I./R.I.F:
+              span &nbsp;#{cedula.tipoDocumento} #{cedula.cedulaORif}&nbsp;
       .tr
         .td
           p
@@ -61,10 +62,11 @@ block content
             p
               b(style={'text-decoration': 'underline', 'font-size':'20px'}) Inmobiliario
         .tr
-          .td
-            p
-              b Codigo Catastral:
-              span &nbsp;#{datos.contribuyente.inmueble.cod_catastral}&nbsp;
+          each codCat in datos.codCatList
+            .td
+              p
+                b Codigo Catastral:
+                span &nbsp;#{codCat}&nbsp;
         .tr
           .td
             p
