@@ -7,9 +7,7 @@ block header
       img(src="images/alcaldia-logo.png", alt="hacienda" style={width:'350px', height:'150px'})
     div(style={'-webkit-flex': 1})
       div(style={'margin':'15px 0'})
-        h3(style={'margin': '0 auto'}) SOLVENCIA MUNICIPAL
-      div(style={'margin':'5px'})
-        //- h2(style={'margin': '0 auto'}) Nro: #{datos.correlativo} 
+        h3(style={'margin': '0 auto'}) SOLVENCIA MUNICIPAL 
       div(style={'border':'1px solid grey'})
         div.tr(style={'font-size': '12px'})
           div(style={'-webkit-flex': 1})
@@ -30,6 +28,8 @@ block header
 block title
 block content
   div#planilla.solvencia
+    div(style={display: '-webkit-flex', 'align-items': 'center', 'justify-content': 'flex-start', margin: '15px 0'})
+      h2 Nro: #{datos.correlativo}
     div(style={'margin-bottom':'25px','margin-top':'25px'}).center
         h3 El Intendente Municipal Tributario hace constar que
     div
