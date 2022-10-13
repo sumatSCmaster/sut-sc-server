@@ -12,6 +12,7 @@ import * as pdf from 'html-pdf';
 import * as qr from 'qrcode';
 import { chunk } from 'lodash';
 import { mainLogger } from '@utils/logger';
+import { collapseTextChangeRangesAcrossMultipleVersions } from 'typescript';
 const dev = process.env.NODE_ENV !== 'production';
 
 const pool = Pool.getInstance();
@@ -393,6 +394,8 @@ export const createOnDemandCertificate = async (type: string, data: any[]): Prom
     if(type === 'SOLA') {
       certificateValues[0].datos.cedulaList = chunk(certificateValues[0].datos.cedulaList, 2)
       certificateValues[0].datos.codCatList = chunk(certificateValues[0].datos.codCatList, 2)
+      const correlativo =  (await client.query(`SELECT consecutivo FROM consecutivo WHERE descripcion = 'SOLVENCIA A'`)).rows[0]?.consecutivo;
+      certificateValues[0].datos.correlativo = correlativo.length < 6 ? new Array(6 - correlativo.length).fill(0).concat(correlativo.split('')).join('') : correlativo;
     }
 
     if (type === 'LIC') {
