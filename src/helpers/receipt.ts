@@ -390,6 +390,11 @@ export const createOnDemandCertificate = async (type: string, data: any[]): Prom
       SOLA: 'hacienda-solvencia-A'
     };
 
+    if(type === 'SOLA') {
+      certificateValues[0].datos.cedulaList = chunk(certificateValues[0].datos.cedulaList, 2)
+      certificateValues[0].datos.codCatList = chunk(certificateValues[0].datos.codCatList, 2)
+    }
+
     if (type === 'LIC') {
       const { renovacion } = certificateValues[0].datos;
       if (!renovacion) {
