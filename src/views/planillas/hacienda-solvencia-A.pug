@@ -36,7 +36,7 @@ block content
       .tr
         .td
           p
-            b El Contribuyente:
+            b El/Los Contribuyente(s):
             span &nbsp;#{datos.contribuyente.razon_social}&nbsp;
       each cedulas in datos.cedulaList
         .tr
@@ -48,12 +48,12 @@ block content
       .tr
         .td
           p
-            b cuyo representante del Inmueble está ubicado en:
+            b cuyo representante(s) del Inmueble(s) está ubicado en:
             span &nbsp;#{datos.contribuyente.direccion ? (datos.contribuyente.direccion.trim() !== '' ? datos.contribuyente.direccion : 'Dirección Sin Asignar') : ''}.&nbsp;
       .tr
         .td
           p
-            b se encuentra solvente con el municipio a la fecha de:
+            b se encuentra solvente(s) con el municipio a la fecha de:
             span &nbsp;#{moment().format('DD/MM/YYYY')}&nbsp;
       .tr
         .td

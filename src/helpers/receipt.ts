@@ -392,7 +392,7 @@ export const createOnDemandCertificate = async (type: string, data: any[]): Prom
     };
 
     if(type === 'SOLA') {
-      certificateValues[0].datos.cedulaList = chunk(certificateValues[0].datos.cedulaList, 2)
+      certificateValues[0].datos.cedulaList = chunk(certificateValues[0].datos.cedulaList, 4)
       certificateValues[0].datos.codCatList = chunk(certificateValues[0].datos.codCatList, 2)
       await client.query(`UPDATE consecutivo SET consecutivo = consecutivo + 1 WHERE descripcion = 'SOLVENCIA A'`);
       const correlativo =  (await client.query(`SELECT consecutivo FROM consecutivo WHERE descripcion = 'SOLVENCIA A'`)).rows[0]?.consecutivo + '';
