@@ -547,8 +547,19 @@ export const generateCodCat = async (data, user) => {
     const bucketKey = `//hacienda/CATASTRO/${property.id}/ceritifcado.pdf`;
     data.property = property;
     data.autor = userName;
+    if (data.datos.perimetro) {
+      const numberToSpanishWords = require('number-to-spanish-words');
+      data.datos.diaNombre = moment().locale('ES').format('dddd');
+      data.datos.diaNumero = numberToSpanishWords(Number(moment().locale('ES').get('day')));
+      data.datos.mesNombre = moment().locale('ES').format('MMMM');
+      data.datos.anoNumero = numberToSpanishWords(Number(moment().locale('ES').get('year')));
+      const owners = data.datos.representantes.split('-');
+      data.datos.propietario = owners[0];
+      const ownerDocs = data.datos.cedulas.split('-');
+      data.datos.propietarioDoc = ownerDocs[0] + '-' + ownerDocs[1]; 
+    }
     console.log(data.datos, 'MASTER GENERATECODCAT');
-    const buffers = await createCertificateBuffers([data], 'catastro', bucketKey);
+    const buffers = await createCertificateBuffers([data], data.datos.perimetro ? 'constanciaEmp' :'catastro', bucketKey);
     const url = await createCertificate(buffers, bucketKey);
     return {status: 200, url}
   } catch(e) {

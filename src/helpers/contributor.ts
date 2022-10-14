@@ -12,11 +12,11 @@ const pool = Pool.getInstance();
  *
  * @param param0
  */
-export const updateContributor = async ({ id, tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia }) => {
+export const updateContributor = async ({ id, tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia, tipoContribuyente }) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    await client.query(queries.UPDATE_TAXPAYER, [id, tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia]);
+    await client.query(queries.UPDATE_TAXPAYER, [id, tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia, tipoContribuyente]);
     await client.query(queries.UPDATE_LAST_UPDATE_DATE, [id]);
     await client.query('COMMIT');
     return { status: 200, message: 'Contribuyente actualizado' };
