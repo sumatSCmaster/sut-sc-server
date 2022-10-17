@@ -436,7 +436,6 @@ export const createCertificateBuffers = async (certInfoArray: any[], pugFileName
       moment: require('moment'),
       institucion: 'HACIENDA',
       QR: linkQr,
-      MAPA: '',
       ...certInfo,
     })
   );

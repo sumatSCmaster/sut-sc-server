@@ -544,9 +544,11 @@ export const generateCodCat = async (data, user) => {
     // const {codCat, datos, datosFisicos, linderos, oldCodCat, perimetro} = data;
     const property = (await client.query('SELECT id_inmueble AS id, metros_terreno AS "superficieTerreno", metros_construccion AS "superficieConstruccion" FROM inmueble_urbano JOIN impuesto.avaluo_inmueble USING (id_inmueble) WHERE id_inmueble = $1', [data.inmueble])).rows[0];
     const userName = (await client.query('SELECT nombre_completo FROM usuario WHERE id_usuario = $1', [user.id])).rows[0]?.nombre_completo
+    const map = (await client.query('SELECT url FROM mapa_inmueble WHERE id_inmueble = $1', [data.inmueble])).rows[0]?.url
     const bucketKey = `//hacienda/CATASTRO/${property.id}/ceritifcado.pdf`;
     data.property = property;
     data.autor = userName;
+    data.mapa = map;
     if (data.datos.perimetro) {
       const numberToSpanishWords = require('number-to-spanish-words');
       data.datos.diaNombre = moment().locale('ES').format('dddd');
