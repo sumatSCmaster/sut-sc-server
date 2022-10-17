@@ -3818,6 +3818,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   INNER JOIN (SELECT DISTINCT ON (id_registro_municipal) * FROM 
   (SELECT * FROM impuesto.liquidacion WHERE EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM $1::date)
   AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM $1::date) AND id_subramo = 10) x) l USING (id_registro_municipal);`,
+  SAVE_MAP:`INSERT INTO mapa_inmueble (id_inmueble, url) VALUES ($1, $2)`,
 };
 
 export default queries;
