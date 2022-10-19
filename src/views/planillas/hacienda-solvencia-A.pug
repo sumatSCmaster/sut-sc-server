@@ -35,9 +35,7 @@ block content
         .td
           p
             b El Contribuyente:
-            span 
-              each razon in datos.contribuyente.razon_social 
-                &nbsp;#{razon}&nbsp;
+            span &nbsp;#{datos.contribuyente.razon_social}&nbsp; 
       each cedulas in datos.cedulaList
         .tr
           each cedula in cedulas
