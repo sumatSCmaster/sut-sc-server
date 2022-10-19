@@ -7,7 +7,7 @@ block header
       img(src="images/alcaldia-logo.png", alt="hacienda" style={width:'350px', height:'150px'})
     div(style={'-webkit-flex': 1})
       div(style={'margin':'15px 0'})
-        h3(style={'margin': '0 auto'}) SOLVENCIA MUNICIPAL 
+        h3(style={'margin': '0 auto'}) SOLVENCIA MUNICIPAL NRO. &nbsp;#{datos.correlativo}&nbsp;
       div(style={'border':'1px solid grey'})
         div.tr(style={'font-size': '12px'})
           div(style={'-webkit-flex': 1})
@@ -28,63 +28,66 @@ block header
 block title
 block content
   div#planilla.solvencia
-    div(style={'margin-bottom':'25px','margin-top':'25px'}).center
-        h3 El Intendente Municipal Tributario hace constar que
+    div(style={'margin-bottom':'25px','margin-top':'25px'})
+        h3 El Intendente Municipal Tributario hace constar que:
     div
       .tr
         .td
           p
             b El Contribuyente:
-            span &nbsp;#{datos.contribuyente.razon_social}&nbsp;
+            span 
+              each razon in datos.contribuyente.razon_social 
+                &nbsp;#{razon}&nbsp;
+      each cedulas in datos.cedulaList
+        .tr
+          each cedula in cedulas
+            .td
+              p
+                b C.I./R.I.F:
+                span &nbsp;#{cedula.tipoDocumento + '-'}#{cedula.cedulaORif}&nbsp;
       .tr
         .td
           p
-            b C.I./R.I.F:
-            span &nbsp;#{datos.contribuyente.documento}&nbsp;
-      .tr
-        .td
-          p
-            b cuyo representante del Inmueble está ubicado en:
-            span &nbsp;#{datos.contribuyente.direccion ? (datos.contribuyente.direccion.trim() !== '' ? datos.contribuyente.direccion : 'Dirección Sin Asignar') : ''}.&nbsp;
-      .tr
-        .td
-          p
-            b se encuentra solvente con el municipio a la fecha de:
+            b Se encuentra &nbsp;
+              u SOLVENTE &nbsp;
+            b con el Municipio a la fecha de:
             span &nbsp;#{moment().format('DD/MM/YYYY')}&nbsp;
       .tr
         .td
           p
-            b Esta solvencia es valida por los siguientes tres meses.
+            b ESTA SOLVENCIA ES VALIDA POR LOS SIGUIENTES (03) TRES MESES. CONTADOS A PARTIR DE LA FECHA DE EMISIN DE LA MISMA.
       if datos.contribuyente.inmueble 
         .tr
           .td
             p
-              b(style={'text-decoration': 'underline', 'font-size':'20px'}) Inmobiliario
+              b(style={'text-decoration': 'underline', 'font-size':'20px'}) DATOS DEL (LOS) INMUEBLES(S)
+        each codCats in datos.codCatList
+          .tr
+            each codCat in codCats
+              .td
+                p
+                  b Código Catastral:
+                  span &nbsp;#{codCat.codCat}&nbsp;
         .tr
           .td
             p
-              b Codigo Catastral:
-              span &nbsp;#{datos.contribuyente.inmueble.cod_catastral}&nbsp;
-        .tr
-          .td
-            p
-              b Direccion:
+              b Concepto:
               span &nbsp;#{datos.contribuyente.inmueble.direccion}&nbsp;
         .tr
           .td
             p
-              b Tipo de Inmueble:
-              span &nbsp;#{datos.contribuyente.inmueble.tipo_inmueble}&nbsp;
+              b Ultimo Avalúo:
+              span &nbsp; Bs. &nbsp;#{datos.contribuyente.inmueble.avaluo}&nbsp;
         .tr
           .td
             p
-              b Ultimo Avaluo:
-              span &nbsp; Bs. &nbsp;#{datos.contribuyente.inmueble.avaluo}&nbsp;
+              b Monto de la Operación:
+              span &nbsp;Bs. #{datos.montoOperacion}&nbsp;
       if datos.sucursal 
         .tr
           .td
             p
-              b(style={'text-decoration': 'underline', 'font-size':'20px'}) Inmobiliario
+              b(style={'text-decoration': 'underline', 'font-size':'20px'}) DATOS DEL (LOS) INMUEBLES(S)
         .tr
           .td
             p
@@ -93,27 +96,24 @@ block content
         .tr
           .td
             p
-              b Codigo Catastral:
+              b Código Catastral:
               span &nbsp;#{datos.sucursal.inmueble.cod_catastral}&nbsp;
         .tr
           .td
             p
-              b Direccion:
+              b Concepto:
               span &nbsp;#{datos.sucursal.inmueble.direccion}&nbsp;
         .tr
           .td
             p
-              b Tipo de Inmueble:
-              span &nbsp;#{datos.sucursal.inmueble.tipo_inmueble}&nbsp;
-        .tr
-          .td
-            p
-              b Ultimo Avaluo:
+              b Ultimo Avalúo:
               span &nbsp; PETROS &nbsp;#{datos.sucursal.inmueble.avaluo}&nbsp;
-    div(style={'margin-top':"90px"}).flex.center
+    div(style={'margin-top':"80px", 'margin-bottom':'5px'}).flex.center
       div(style={height:"180px"})
         img(src=QR, alt='QR', style={width:'300px', height:"300px"})
       div.item-firma
-        img(src="images/firma.png", style={'margin-top':'-90px', 'z-index':'1', width:'375px', height:"375px"}, alt="", srcset="")
+        img(src="images/firma.png", style={'margin-top':'-80px', 'z-index':'1', width:'375px', height:"375px"}, alt="", srcset="")
       div(style={height:"200px"})
         img(src='images/SOLVENCIA-TIPO-A.png', alt='logo', style={width:'300px', height:"300px"})
+    div(style={'margin-top':"0px", 'margin-bottom':'5px'}).flex.center
+      p VALIDO UNICAMENTE PARA EFECTOS DE REGISTRO RELACIONADOS CON EL (LOS) INMUEBLES CERTIFICADOS CON EL (LOS) NUMEROS CATASTRALES Y DESCRITO ARRIBA. 

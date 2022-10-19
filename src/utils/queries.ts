@@ -791,7 +791,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   TAX_PAYER_EXISTS: 'SELECT * FROM impuesto.contribuyente WHERE tipo_documento = $1 AND documento = $2',
   TAX_PAYER_EXISTS_AMBIGUOUS: `SELECT * FROM impuesto.contribuyente WHERE tipo_documento = $1 AND documento LIKE $2`,
   UPDATE_TAXPAYER: `UPDATE impuesto.contribuyente SET tipo_documento = $2, documento = $3, razon_social = $4, 
-      denominacion_comercial = $5, siglas = $6, id_parroquia = $7, sector = $8, direccion = $9, punto_referencia = $10 WHERE id_contribuyente = $1;`,
+      denominacion_comercial = $5, siglas = $6, id_parroquia = $7, sector = $8, direccion = $9, punto_referencia = $10, tipo_contribuyente = $11 WHERE id_contribuyente = $1;`,
   UPDATE_RIM:
     'UPDATE impuesto.registro_municipal SET telefono_celular = $2, email = $3, denominacion_comercial = $4, nombre_representante = $5, capital_suscrito = $6, tipo_sociedad = $7, telefono_habitacion = $8, id_parroquia = $9, direccion = $10, es_monotributo = $11 WHERE id_registro_municipal = $1',
   GET_APPLICATION_BY_ID: 'SELECT * FROM impuesto.solicitud WHERE id_solicitud = $1',
@@ -3818,6 +3818,7 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   INNER JOIN (SELECT DISTINCT ON (id_registro_municipal) * FROM 
   (SELECT * FROM impuesto.liquidacion WHERE EXTRACT('month' FROM fecha_liquidacion) = EXTRACT('month' FROM $1::date)
   AND EXTRACT('year' FROM fecha_liquidacion) = EXTRACT('year' FROM $1::date) AND id_subramo = 10) x) l USING (id_registro_municipal);`,
+  SAVE_MAP:`INSERT INTO mapa_inmueble (id_inmueble, url) VALUES ($1, $2)`,
 };
 
 export default queries;

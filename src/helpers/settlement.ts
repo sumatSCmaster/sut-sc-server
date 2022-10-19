@@ -2095,10 +2095,10 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
         await client.query(queries.GET_APPLICATION_INSTANCES_BY_USER, [user.id])
       ).rows
         .filter((el) => el.tipo_solicitud !== 'CONVENIO')
-        .map(async (el, i, a) => {
+        .map(async (el) => {
           const liquidaciones = (await client.query(queries.GET_SETTLEMENTS_BY_APPLICATION_INSTANCE, [el.id_solicitud])).rows;
+          console.log(liquidaciones, 'MASTER')
           const docs = (await client.query(queries.GET_CONTRIBUTOR_BY_ID, [el.id_contribuyente])).rows[0];
-          console.log(i, a.length, 'prueba MASTER INSTANCES')
           const state = (await client.query(queries.GET_APPLICATION_STATE, [el.id_solicitud])).rows[0].state;
           const rim = (await client.query('SELECT * FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidaciones[0]?.id_registro_municipal]));
             const type = el.tipo_solicitud;

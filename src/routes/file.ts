@@ -60,6 +60,12 @@ const uploadFile = async (req, res, next) => {
         fileFilter: photoFilter,
       }).array('planillas')(req, res, next);
       break;
+      case 'special':
+        multer({
+          storage: diskStorage('tramites/'+ req.params.id),
+          fileFilter: photoFilter,
+        }).array('recaudos')(req, res, next);
+      break;
     case 'finings':
       multer({
         storage: diskStorage('tramites/' + req.params.id),
@@ -97,6 +103,38 @@ const uploadFile = async (req, res, next) => {
   //   });
   // }
 };
+router.post('/:type/support/:id', uploadFile, async (req: any, res) => {
+  const { id, type } = req.params;
+  const media = req.files.map((file) => typeMedia(`tramites/${id}`)(file)(process.env.NODE_ENV));
+  const client = await pool.connect();
+  try {
+    if (media.length > 0) {
+      if (type === 'special') {
+        client.query('BEGIN');
+        await Promise.all(
+          media.map(async (urlRecaudo, key) => {
+            await client.query(queries.SAVE_MAP, [id, urlRecaudo]);
+          })
+        );
+        client.query('COMMIT');
+      }
+    }
+    res.status(200).json({
+      status: 200,
+      message: 'Mapa subido de manera exitosa',
+      ['mapa']: media,
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 500,
+      error: errorMessageExtractor(error),
+      message: errorMessageGenerator(error) || error.message || 'No se logró guardar el mapa',
+    });
+  } finally {
+    client.release();
+  }
+});
+
 
 router.post('/:type/:id?/:getId?', uploadFile, async (req: any, res) => {
   const { id, type, getId } = req.params;
