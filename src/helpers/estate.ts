@@ -354,7 +354,7 @@ export const parishEstates = async ({ idParroquia }) => {
   }
 };
 
-export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, tipoTierraUrbana, tipoConstruccion, dirDoc, claseTerreno, valorConstruccion, manzana, userId, clasificacion, uso, tenencia, contrato, clase, fechaVencimiento, mercados, tipoLocal, tipoAE, objetoQuiosco, tipoQuiosco, zonaQuiosco, areaServicios, sector, canonArrendamientoMercado, relativo }) => {
+export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, tipoMercado, tipoTierraUrbana, tipoConstruccion, dirDoc, claseTerreno, valorConstruccion, manzana, userId, clasificacion, uso, tenencia, contrato, clase, fechaVencimiento, mercados, tipoLocal, tipoAE, objetoQuiosco, tipoQuiosco, zonaQuiosco, areaServicios, sector, canonArrendamientoMercado, relativo }) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -381,7 +381,7 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
         estate = {...estate, ...ejido};
         break;
       case 'MERCADO':
-        const mercado = (await client.query(queries.INSERT_MARKET_ESTATE, [estate.id, mercados, tipoLocal, tipoAE, canonArrendamientoMercado])).rows[0];
+        const mercado = (await client.query(queries.INSERT_MARKET_ESTATE, [estate.id, tipoMercado, tipoLocal, tipoAE, canonArrendamientoMercado])).rows[0];
         estate = {...estate, ...mercado};
         break;
       case 'QUIOSCO':
