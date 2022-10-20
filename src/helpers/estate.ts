@@ -561,7 +561,6 @@ export const generateCodCat = async (data, user) => {
       data.datos.propietarioDoc = ownerDocs[0] + '-' + ownerDocs[1]; 
     }
     console.log(data.datos, 'MASTER GENERATECODCAT');
-    data.datos.nroCedula = String(map.map_number).length < 6 ? '0'+String(map.map_number) : String(map.map_number);
     const buffers = await createCertificateBuffers([data], data.datos.perimetro ? 'constanciaEmp' :'catastro', bucketKey);
     const url = await createCertificate(buffers, bucketKey);
     return {status: 200, url}
