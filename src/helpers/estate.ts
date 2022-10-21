@@ -561,6 +561,10 @@ export const generateCodCat = async (data, user) => {
       data.datos.propietarioDoc = ownerDocs[0] + '-' + ownerDocs[1]; 
     }
     console.log(data.datos, 'MASTER GENERATECODCAT');
+    await client.query(`UPDATE consecutivo SET consecutivo = consecutivo + 1 WHERE descripcion = 'CATASTRO'`);
+    const correlativo =  (await client.query(`SELECT consecutivo FROM consecutivo WHERE descripcion = 'CATASTRO'`)).rows[0]?.consecutivo + '';
+    data.datos.nroCedula = correlativo.length < 6 ? new Array(6 - correlativo.length).fill(0).concat(correlativo.split('')).join('') : correlativo;
+    
     const buffers = await createCertificateBuffers([data], data.datos.perimetro ? 'constanciaEmp' :'catastro', bucketKey);
     const url = await createCertificate(buffers, bucketKey);
     return {status: 200, url}

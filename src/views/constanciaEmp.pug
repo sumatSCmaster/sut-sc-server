@@ -17,6 +17,9 @@ html
               p(style={'padding':'1px'})  
                 b CEDULA N°: &nbsp;
                 b #{datos.nroCedula}
+              p(style={'padding':'1px'})  
+                b CONTROL N°: &nbsp;
+                b #{datos.nroControl}
               p(style={'padding':'1px'}) 
                 b RECIBO N°: &nbsp; 
                 b #{datos.nroRecibo}
@@ -254,12 +257,12 @@ html
                   p 
                     b DATOS FISICOS
               div.tr.border-bottom
-                div(style={'-webkit-flex': 3.5, 'justify-content':'end'}).td.right
+                div(style={'-webkit-flex': 3.5}).td.right
                   p 
                     b Superficie(m2)
-                div(style={'-webkit-flex': 2.5 , 'justify-content':'end'}).td.right.border-right
+                div(style={'-webkit-flex': 2.5}).td.right.border-right
                   p 
-                    b Total BS.F
+                    b Total 
                 div(style={'-webkit-flex': 3.5}).td.left.border-right
                   p 
                     b Tenencia del Terreno:
@@ -310,16 +313,6 @@ html
                   p 
                     b 
                       i #{datosFisicos.familiar}
-                            div.tr.border-bottom
-              div.tr.border-bottom
-                div(style={'-webkit-flex': 6}).td.border-right
-                div(style={'-webkit-flex': 3.5}).td.left.border-right
-                  p 
-                    b Nro de Arrendamiento de Ejido:
-                div(style={'-webkit-flex': 2.5}).td.center
-                  p 
-                    b 
-                      i #{datosFisicos.arrendamiento}
               div.tr.border-bottom
                 div(style={'-webkit-flex': 12, 'font-size':'16px'}).td.center
                   p 
@@ -376,7 +369,10 @@ html
                 'background': datosFisicos.descripcionUso.includes('Industrial') ? 'gray' : 'white'}).td.center.border-right
                   p 
                     b Industrial
-                div(style={'-webkit-flex': 3}).td.center
+                div(style={'-webkit-flex': 3, 
+                'background': datosFisicos.descripcionUso.includes('Residencial') ? 'gray' : 'white'}).td.center.border-right
+                  p 
+                    b Residencial
                 div(style={'-webkit-flex': 2, 
                 'background': datosFisicos.serviciosPublicos.includes('Cloacas') ? 'gray' : 'white'}).td.center.border-right
                   p 
@@ -453,6 +449,7 @@ html
           div.header-child
             div 
               p(style={'padding':'2px'}) CEDULA N°: #{datos.nroCedula}
+              p(style={'padding':'2px'}) CONTROL N°: #{datos.nroControl}
               p(style={'padding':'2px'}) RECIBO N°: #{datos.nroRecibo}
             img#QR(src=QR, alt='QR')
       div#content

@@ -335,6 +335,7 @@ export const generatePatentDocument = async ({branchId}) => {
             ...contribuyente,
             razonSocial: contribuyente.razon_social,
             tipoDocumento: contribuyente.tipo_documento,
+            direccionRim: referencia.direccion,
           }
         },
         funcionario:{
