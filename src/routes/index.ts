@@ -90,7 +90,7 @@ router.use('/api', external);
 router.use('/observation', observation);
 router.use(resources);
 router.use('/reportSolvRRI', reportSolvRRI);
-router.use('/RRICertificate', RRICertificate);
+// router.use('/RRICertificate', RRICertificate);
 router.use('/reportCPU', reportCPU);
 router.use('/solvencies', solvencies);
 router.use('/report', report);
