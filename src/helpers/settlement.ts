@@ -2,7 +2,6 @@ import Pool from '@utils/Pool';
 import queries from '@utils/queries';
 import { errorMessageGenerator, errorMessageExtractor } from './errors';
 import { PoolClient } from 'pg';
-import GticPool from '@utils/GticPool';
 import { insertPaymentReference, insertPaymentCashier } from './banks';
 import moment, { Moment } from 'moment';
 import switchcase from '@utils/switch';
@@ -33,7 +32,6 @@ import { inspect } from 'util';
 import { createForm } from './formsHelper';
 import { TodayInstance } from 'twilio/lib/rest/api/v2010/account/usage/record/today';
 
-const gticPool = GticPool.getInstance();
 const pool = Pool.getInstance();
 
 const dev = process.env.NODE_ENV !== 'production';
@@ -71,12 +69,6 @@ export const checkContributorExists = () => async (req: any, res, next) => {
     const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [ref, contributor?.id_contribuyente])).rows[0];
     if (!!ref && !branch) return res.status(404).send({ status: 404, message: 'No existe la sucursal solicitada' });
     const branchIsUpdated = branch?.actualizado;
-    if (!contributor || (!!contributor && !!ref && !branchIsUpdated)) {
-      const x = await externalLinkingForCashier({ document: doc, docType: pref, reference: ref, user, typeUser: contrib });
-      return res.status(202).json({ status: 202, message: 'Informacion de enlace de cuenta obtenida', datosEnlace: x });
-    } else {
-      return next();
-    }
     return next();
   } catch (error) {
     mainLogger.error(error);
@@ -326,7 +318,6 @@ export const getIUSettlementsForContributor = async ({ document, reference, type
  */
 export const getSettlements = async ({ document, reference, type, user }: { document: string; reference: string | null; type: string; user: Usuario }) => {
   const client = await pool.connect();
-  const gtic = await gticPool.connect();
   const montoAcarreado: any = {};
   let SM, PP, MONO, VH;
   let AE: any[] = [];
@@ -726,7 +717,6 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
     };
   } finally {
     client.release();
-    gtic.release();
   }
 };
 
@@ -743,51 +733,6 @@ const nullStringCheck = (str: string | null): string => {
  *
  * @param param0
  */
-export const getTaxPayerInfo = async ({ docType, document, type, gtic, client }) => {
-  let taxPayer;
-  try {
-    if (type === 'NATURAL') {
-      const naturalContributor = (await gtic.query(queries.gtic.GET_NATURAL_CONTRIBUTOR, [document, docType])).rows[0];
-      if (!naturalContributor) return { status: 200, contribuyente: { tipoContribuyente: type }, message: 'No existe un usuario registrado en HACIENDA' };
-      taxPayer = {
-        tipoContribuyente: type,
-        documento: document,
-        tipoDocumento: docType,
-        razonSocial: `${naturalContributor.nb_contribuyente} ${naturalContributor.ap_contribuyente}`.replace('null', '').trim(),
-        telefonoMovil: nullStringCheck(naturalContributor.nu_telf_movil).trim(),
-        telefonoHabitacion: nullStringCheck(naturalContributor.nu_telf_hab).trim(),
-        siglas: nullStringCheck(naturalContributor.tx_siglas).trim(),
-        denomComercial: nullStringCheck(naturalContributor.tx_denom_comercial).trim(),
-        email: nullStringCheck(naturalContributor.tx_email).trim(),
-        parroquia: naturalContributor.tx_direccion ? (await client.query(queries.GET_PARISH_BY_DESCRIPTION, [naturalContributor.tx_direccion.split('Parroquia')[1].split('Sector')[0].trim()])).rows[0]?.id || undefined : undefined,
-        sector: nullStringCheck(naturalContributor.sector).trim(),
-        direccion: naturalContributor.tx_direccion ? 'Avenida ' + naturalContributor.tx_direccion.split('Parroquia')[1].split('Avenida')[1].split('Pto')[0].trim().replace(/.$/, '') : undefined,
-        puntoReferencia: nullStringCheck(naturalContributor.tx_punto_referencia).trim(),
-      };
-    } else {
-      const juridicalContributor = (await gtic.query(queries.gtic.GET_JURIDICAL_CONTRIBUTOR, [document, docType])).rows[0];
-      if (!juridicalContributor) return { status: 200, contribuyente: { tipoContribuyente: type }, message: 'No existe un usuario registrado en HACIENDA' };
-      taxPayer = {
-        tipoContribuyente: type,
-        documento: document,
-        tipoDocumento: docType,
-        razonSocial: nullStringCheck(juridicalContributor.tx_razon_social).trim(),
-        siglas: nullStringCheck(juridicalContributor.tx_siglas).trim(),
-        denomComercial: nullStringCheck(juridicalContributor.tx_denom_comercial).trim(),
-        telefonoMovil: nullStringCheck(juridicalContributor.nu_telf_movil).trim(),
-        telefonoHabitacion: nullStringCheck(juridicalContributor.nu_telf_hab).trim(),
-        email: nullStringCheck(juridicalContributor.tx_email).trim(),
-        parroquia: juridicalContributor.tx_direccion ? (await client.query(queries.GET_PARISH_BY_DESCRIPTION, [juridicalContributor.tx_direccion.split('Parroquia')[1].split('Sector')[0].trim()])).rows[0]?.id || undefined : undefined,
-        sector: nullStringCheck(juridicalContributor.sector).trim(),
-        direccion: juridicalContributor.tx_direccion ? 'Avenida ' + juridicalContributor.tx_direccion.split('Parroquia')[1].split('Avenida')[1].split('Pto')[0].trim().replace(/.$/, '') : undefined,
-        puntoReferencia: nullStringCheck(juridicalContributor.tx_punto_referencia).trim(),
-      };
-    }
-    return taxPayer;
-  } catch (error) {
-    throw errorMessageExtractor(error);
-  }
-};
 
 /**
  *
@@ -812,35 +757,11 @@ const structureEstates = (x: any) => {
  *
  * @param x
  */
-const structureSettlements = (x: any) => {
-  return {
-    id: nullStringCheck(x.co_liquidacion),
-    estado: +x.co_estatus === 1 ? 'VIGENTE' : 'PAGADO',
-    ramo: x.nb_ramo == 236 ? 'TASA ADMINISTRATIVA DE SOLVENCIA DE AE' : nullStringCheck(x.tx_ramo),
-    codigoRamo: nullStringCheck(x.nb_ramo),
-    descripcion: 'Liquidacion por enlace de GTIC',
-    monto: nullStringCheck(x.nu_monto),
-    fechaLiquidacion: x.fe_liquidacion,
-    fechaVencimiento: x.fe_vencimiento,
-    fecha: { month: moment(x.fe_liquidacion).toDate().toLocaleDateString('ES', { month: 'long' }), year: moment(x.fe_liquidacion).year() },
-  };
-};
 
 /**
  *
  * @param x
  */
-const structureFinings = (x: any) => {
-  return {
-    id: nullStringCheck(x.co_decl_multa),
-    estado: nullStringCheck(x.in_activo ? 'VIGENTE' : 'PAGADO'),
-    monto: nullStringCheck(x.nu_monto),
-    fechaLiquidacion: x.fecha_liquidacion,
-    ramo: 'MULTAS',
-    descripcion: 'Liquidacion por enlace de GTIC',
-    fecha: { month: moment(x.fecha_liquidacion).toDate().toLocaleDateString('ES', { month: 'long' }), year: moment(x.fecha_liquidacion).year() },
-  };
-};
 
 /**
  *
@@ -867,653 +788,11 @@ const structureContributor = (x: any) => {
  *
  * @param param0
  */
-export const externalLinkingForCashier = async ({ document, docType, reference, typeUser, user }) => {
-  const client = await pool.connect();
-  const gtic = await gticPool.connect();
-  try {
-    const contributorQuery = typeUser === 'JURIDICO' ? queries.gtic.GET_JURIDICAL_CONTRIBUTOR + ' LIMIT 1' : queries.gtic.GET_NATURAL_CONTRIBUTOR + ' LIMIT 1';
-    mainLogger.info(contributorQuery);
-    const contributorExists = (await gtic.query(contributorQuery, [document, docType])).rowCount > 0;
-    if (!contributorExists) throw { status: 404, message: 'Contribuyente no encontrado', linked: false };
-    const linkingData = await Promise.all(
-      (
-        await gtic.query(contributorQuery, [document, docType])
-      ).rows
-        .map(async (el) => {
-          mainLogger.info(el);
-          const contributorExists = (await client.query(queries.TAX_PAYER_EXISTS, [el.tx_tp_doc, el.tx_dist_contribuyente === 'J' ? el.tx_rif : el.nu_cedula])).rows;
-          if (contributorExists.length > 0) return getLinkedContributorData(contributorExists[0]);
-          return {
-            datosContribuyente: await getTaxPayerInfo({
-              docType: el.tx_tp_doc,
-              document: el.tx_dist_contribuyente === 'J' ? el.tx_rif : el.nu_cedula,
-              type: el.tx_dist_contribuyente === 'J' ? 'JURIDICO' : 'NATURAL',
-              gtic,
-              client,
-            }),
-            sucursales: await Promise.all(
-              el.tx_dist_contribuyente === 'J'
-                ? (
-                    await gtic.query(queries.gtic.GET_JURIDICAL_CONTRIBUTOR, [el.tx_rif, el.tx_tp_doc])
-                  ).rows.map(async (x) => {
-                    let convenios: any;
-                    const inmuebles = await Promise.all((await gtic.query(queries.gtic.GET_ESTATES_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureEstates(j)));
-                    const liquidaciones = await Promise.all((await gtic.query(queries.gtic.GET_SETTLEMENTS_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureSettlements(j)));
-                    const creditoFiscal = (await gtic.query(queries.gtic.GET_FISCAL_CREDIT_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows[0];
-                    const multas = await Promise.all((await gtic.query(queries.gtic.GET_FININGS_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureFinings(j)));
-                    const actividadesEconomicas = await Promise.all(
-                      (await gtic.query(queries.gtic.CONTRIBUTOR_ECONOMIC_ACTIVITIES, [x.co_contribuyente])).rows.map((x) => ({ id: x.nu_ref_actividad, descripcion: x.tx_actividad, alicuota: x.nu_porc_alicuota, minimoTributable: x.nu_ut }))
-                    );
-                    const agreementRegistry = (
-                      await gtic.query('SELECT * FROM tb079_liquidacion INNER JOIN tb046_ae_ramo USING (co_ramo) WHERE co_estatus = 4 AND co_contribuyente = $1 AND anio_liquidacion = EXTRACT("year" FROM CURRENT_DATE)', [x.co_contribuyente])
-                    ).rows;
-                    const hasAgreements = agreementRegistry.length > 0;
-                    if (hasAgreements) {
-                      convenios = (
-                        await Promise.all(
-                          agreementRegistry.map(async (j) => {
-                            const solicitudConvenio = +j.tx_observacion1.split(':')[1];
-                            if (isNaN(solicitudConvenio)) return;
-                            const solicitud = (await gtic.query('SELECT * FROM t15_solicitud WHERE co_solicitud = $1 AND co_estatus != 5', [solicitudConvenio])).rows;
-                            const isCurrentAgreement = solicitud.length > 0;
-                            if (isCurrentAgreement) {
-                              const liquidaciones = (await gtic.query('SELECT * FROM tb079_liquidacion INNER JOIN tb046_ae_ramo USING (co_ramo) WHERE co_solicitud = $1', [solicitud[0].co_solicitud])).rows.map((x) => structureSettlements(x));
-                              return (
-                                (liquidaciones.length > 0 && {
-                                  id: +solicitudConvenio,
-                                  estado: solicitud[0].co_estatus === 1 ? 'VIGENTE' : 'PAGADO',
-                                  cantPorciones: liquidaciones.length,
-                                  idRamo: (await client.query('SELECT id_ramo AS id FROM impuesto.ramo WHERE codigo = $1', [j.nb_ramo])).rows[0].id,
-                                  porciones: liquidaciones.map((i) => {
-                                    i.codigoRamo = j.nb_ramo;
-                                    i.ramo = (j.tx_ramo as string).trim();
-                                    return i;
-                                  }),
-                                }) ||
-                                null
-                              );
-                            }
-                            return null;
-                          })
-                        )
-                      )?.filter((el) => el);
-                      convenios = convenios.length > 0 ? uniqBy(convenios, 'id') : undefined;
-                    }
-                    inmuebles.push({
-                      id: x.co_contribuyente,
-                      direccion: nullStringCheck(x.tx_direccion),
-                      email: nullStringCheck(x.tx_email),
-                      razonSocial: nullStringCheck(x.tx_razon_social),
-                      denomComercial: nullStringCheck(x.tx_denom_comercial),
-                      tipoInmueble: 'COMERCIAL',
-                      metrosCuadrados: 0.0,
-                      cuentaContrato: 0.0,
-                      nombreRepresentante: nullStringCheck(x.nb_representante_legal || undefined).trim(),
-                      ultimoAvaluo: { year: moment().year(), monto: 0 },
-                    });
-                    const datosSucursal = {
-                      id: nullStringCheck(x.co_contribuyente),
-                      direccion: nullStringCheck(x.tx_direccion),
-                      email: nullStringCheck(x.tx_email),
-                      razonSocial: nullStringCheck(x.tx_razon_social),
-                      denomComercial: nullStringCheck(x.tx_denom_comercial),
-                      metrosCuadrados: 0.0,
-                      cuentaContrato: 0.0,
-                      nombreRepresentante: nullStringCheck(x.nb_representante_legal || undefined),
-                      telefonoMovil: nullStringCheck(x.nu_telf_representante || x.nu_telf_movil),
-                      registroMunicipal: nullStringCheck(x.nu_referencia),
-                      representado: nullStringCheck(x.nu_referencia) === reference,
-                      creditoFiscal: creditoFiscal ? creditoFiscal.mo_haber : 0,
-                    };
-                    return { datosSucursal, inmuebles, liquidaciones, multas, convenios, actividadesEconomicas };
-                  })
-                : (
-                    await gtic.query(queries.gtic.GET_NATURAL_CONTRIBUTOR, [el.nu_cedula, el.tx_tp_doc])
-                  ).rows.map(async (x) => {
-                    let datos;
-                    if (x.nu_referencia) {
-                      let convenios: any;
-                      const inmuebles = await Promise.all((await gtic.query(queries.gtic.GET_ESTATES_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureEstates(j)));
-                      const liquidaciones = await Promise.all((await gtic.query(queries.gtic.GET_SETTLEMENTS_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureSettlements(j)));
-                      const creditoFiscal = (await gtic.query(queries.gtic.GET_FISCAL_CREDIT_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows[0];
-                      const multas = await Promise.all((await gtic.query(queries.gtic.GET_FININGS_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureFinings(j)));
-                      const actividadesEconomicas = await Promise.all(
-                        (await gtic.query(queries.gtic.CONTRIBUTOR_ECONOMIC_ACTIVITIES, [x.co_contribuyente])).rows.map((x) => ({ id: x.nu_ref_actividad, descripcion: x.tx_actividad, alicuota: x.nu_porc_alicuota, minimoTributable: x.nu_ut }))
-                      );
-                      const agreementRegistry = (await gtic.query('SELECT * FROM tb079_liquidacion INNER JOIN tb046_ae_ramo USING (co_ramo) WHERE co_estatus = 4 AND co_contribuyente = $1', [x.co_contribuyente])).rows;
-                      const hasAgreements = agreementRegistry.length > 0;
-                      if (hasAgreements) {
-                        convenios = (
-                          await Promise.all(
-                            agreementRegistry.map(async (j) => {
-                              const solicitudConvenio = +j.tx_observacion1.split(':')[1];
-                              if (isNaN(solicitudConvenio)) return;
-                              const solicitud = (await gtic.query('SELECT * FROM t15_solicitud WHERE co_solicitud = $1 AND co_estatus != 5', [solicitudConvenio])).rows;
-                              const isCurrentAgreement = solicitud.length > 0;
-                              if (isCurrentAgreement) {
-                                const liquidaciones = (await gtic.query('SELECT * FROM tb079_liquidacion INNER JOIN tb046_ae_ramo USING (co_ramo) WHERE co_solicitud = $1', [solicitud[0].co_solicitud])).rows.map((x) => structureSettlements(x));
-                                return (
-                                  (liquidaciones.length > 0 && {
-                                    id: +solicitudConvenio,
-                                    estado: solicitud[0].co_estatus === 1 ? 'VIGENTE' : 'PAGADO',
-                                    idRamo: (await client.query('SELECT id_ramo FROM impuesto.ramo WHERE codigo = $1', [j.nb_ramo])).rows[0].id,
-                                    cantPorciones: liquidaciones.length,
-                                    porciones: liquidaciones.map((i) => {
-                                      i.codigoRamo = j.nb_ramo;
-                                      i.ramo = (j.tx_ramo as string).trim();
-                                      return i;
-                                    }),
-                                  }) ||
-                                  null
-                                );
-                              }
-                              return null;
-                            })
-                          )
-                        ).filter((el) => el);
-                        convenios = convenios.length > 0 ? uniqBy(convenios, 'id') : undefined;
-                      }
-                      inmuebles.push({
-                        id: x.co_contribuyente,
-                        direccion: nullStringCheck(x.tx_direccion),
-                        email: nullStringCheck(x.tx_email),
-                        razonSocial: nullStringCheck(x.tx_razon_social),
-                        denomComercial: nullStringCheck(x.tx_denom_comercial),
-                        tipoInmueble: 'RESIDENCIAL',
-                        metrosCuadrados: 0.0,
-                        cuentaContrato: 0.0,
-                        nombreRepresentante: nullStringCheck(x.nb_representante_legal || undefined).trim(),
-                        ultimoAvaluo: { year: moment().year(), monto: 0 },
-                      });
-                      const datosSucursal = {
-                        id: nullStringCheck(x.co_contribuyente),
-                        direccion: nullStringCheck(x.tx_direccion),
-                        email: nullStringCheck(x.tx_email),
-                        razonSocial: nullStringCheck(x.tx_razon_social),
-                        denomComercial: nullStringCheck(x.tx_denom_comercial),
-                        metrosCuadrados: 0.0,
-                        cuentaContrato: 0.0,
-                        nombreRepresentante: nullStringCheck(x.nb_representante_legal || undefined),
-                        telefonoMovil: nullStringCheck(x.nu_telf_representante || x.nu_telf_movil),
-                        registroMunicipal: nullStringCheck(x.nu_referencia),
-                        representado: nullStringCheck(x.nu_referencia) === reference,
-                        creditoFiscal: creditoFiscal ? creditoFiscal.mo_haber : 0,
-                      };
-                      datos = {
-                        datosSucursal,
-                        inmuebles,
-                        liquidaciones,
-                        multas,
-                        convenios,
-                        actividadesEconomicas,
-                      };
-                    } else {
-                      const liquidaciones = await Promise.all((await gtic.query(queries.gtic.GET_SETTLEMENTS_BY_CONTRIBUTOR, [x.co_contribuyente])).rows.map((j) => structureSettlements(j)));
-                      const creditoFiscal = (await gtic.query(queries.gtic.GET_FISCAL_CREDIT_BY_CONTRIBUTOR, [x.co_contribuyente])).rows[0];
-                      const inmuebles = await Promise.all((await gtic.query(queries.gtic.GET_ESTATES_BY_CONTRIBUTOR, [x.co_contribuyente])).rows.map((j) => structureEstates(j)));
-                      const multas = await Promise.all((await gtic.query(queries.gtic.GET_FININGS_BY_CONTRIBUTOR, [x.co_contribuyente])).rows.map((j) => structureFinings(j)));
-                      const datosSucursal = {
-                        id: nullStringCheck(x.co_contribuyente),
-                        direccion: nullStringCheck(x.tx_direccion),
-                        email: nullStringCheck(x.tx_email),
-                        razonSocial: nullStringCheck(x.tx_razon_social),
-                        denomComercial: nullStringCheck(x.tx_denom_comercial),
-                        metrosCuadrados: 0.0,
-                        cuentaContrato: 0.0,
-                        nombreRepresentante: nullStringCheck(x.nb_representante_legal || undefined),
-                        telefonoMovil: nullStringCheck(x.nu_telf_representante || x.nu_telf_movil),
-                        creditoFiscal: creditoFiscal ? creditoFiscal.mo_haber : 0,
-                      };
-                      datos = {
-                        // datosSucursal,
-                        inmuebles,
-                        liquidaciones,
-                        multas,
-                      };
-                    }
-                    return datos;
-                  })
-            ),
-            actividadesEconomicas: el.nu_referencia
-              ? await Promise.all(
-                  (
-                    await gtic.query(typeUser === 'JURIDICO' ? queries.gtic.ECONOMIC_ACTIVITIES_JURIDICAL : queries.gtic.ECONOMIC_ACTIVIES_NATURAL, [docType, document])
-                  ).rows.map((x) => ({
-                    id: x.nu_ref_actividad,
-                    descripcion: x.tx_actividad,
-                    alicuota: x.nu_porc_alicuota,
-                    minimoTributable: x.nu_ut,
-                  }))
-                )
-              : undefined,
-            sinSucursales: false,
-          };
-        })
-        .filter((el) => el)
-    );
-    return linkingData;
-    // await client.query('BEGIN');
-    // const { datosContribuyente, sucursales, actividadesEconomicas } = linkingData[0];
-    // const { tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia, tipoContribuyente } = datosContribuyente;
-    // const contributor = (await client.query(queries.CREATE_CONTRIBUTOR_FOR_LINKING, [tipoDocumento, documento, razonSocial, denomComercial, siglas, parroquia, sector, direccion, puntoReferencia, true, tipoContribuyente])).rows[0];
-    // // if (actividadesEconomicas!.length > 0) {
-    // //   await Promise.all(
-    // //     actividadesEconomicas!.map(async (x) => {
-    // //       return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [contributor.id_contribuyente, x.id]);
-    // //     })
-    // //   );
-    // // }
-    // if (datosContribuyente.tipoContribuyente === 'JURIDICO') {
-    //   const rims: number[] = await Promise.all(
-    //     await sucursales.map(async (x) => {
-    //       const { inmuebles, liquidaciones, multas, datosSucursal, actividadesEconomicas } = x;
-    //       const liquidacionesPagas = liquidaciones.filter((el) => el.estado === 'PAGADO');
-    //       const liquidacionesVigentes = liquidaciones.filter((el) => el.estado !== 'PAGADO');
-    //       const multasPagas = multas.filter((el) => el.estado === 'PAGADO');
-    //       const multasVigentes = multas.filter((el) => el.estado !== 'PAGADO');
-    //       const pagados = liquidacionesPagas.concat(multasPagas);
-    //       const vigentes = liquidacionesVigentes.concat(multasVigentes);
-    //       const { registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado } = datosSucursal;
-    //       const registry = (await client.query(queries.CREATE_MUNICIPAL_REGISTRY_FOR_LINKING_CONTRIBUTOR, [contributor.id_contribuyente, registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado || false])).rows[0];
-    //       if (actividadesEconomicas!.length > 0) {
-    //         await Promise.all(
-    //           actividadesEconomicas!.map(async (x) => {
-    //             return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [registry.id_registro_municipal, x.id]);
-    //           })
-    //         );
-    //       }
-    //       const credit = (await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [registry.id_registro_municipal, 'JURIDICO', datosSucursal.creditoFiscal])).rows[0];
-    //       const estates =
-    //         inmuebles.length > 0
-    //           ? await Promise.all(
-    //               inmuebles.map(async (el) => {
-    //                 const inmueble = (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_registro_municipal, el.direccion, el.tipoInmueble])).rows[0];
-    //                 mainLogger.info(inmueble);
-    //                 await client.query(queries.INSERT_ESTATE_VALUE, [inmueble.id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
-    //               })
-    //             )
-    //           : undefined;
-    //       if (pagados.length > 0) {
-    //         const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(representado && user.id) || null, contributor.id_contribuyente])).rows[0];
-    //         await client.query(queries.SET_DATE_FOR_LINKED_APPROVED_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
-    //         await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
-    //         await Promise.all(
-    //           pagados.map(async (el) => {
-    //             const settlement = (
-    //               await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
-    //                 application.id_solicitud,
-    //                 fixatedAmount(+el.monto),
-    //                 el.ramo,
-    //                 { fecha: el.fecha },
-    //                 moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
-    //                 registry.id_registro_municipal,
-    //               ])
-    //             ).rows[0];
-    //             await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, settlement.id_liquidacion]);
-    //           })
-    //         );
-    //       }
-
-    //       if (vigentes.length > 0) {
-    //         const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [(representado && user.id) || null, contributor.id_contribuyente])).rows[0];
-    //         await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
-    //         await Promise.all(
-    //           vigentes.map(async (el) => {
-    //             const settlement = (
-    //               await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
-    //                 application.id_solicitud,
-    //                 fixatedAmount(+el.monto),
-    //                 el.ramo,
-    //                 { fecha: el.fecha },
-    //                 moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
-    //                 registry.id_registro_municipal,
-    //               ])
-    //             ).rows[0];
-    //             await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, settlement.id_liquidacion]);
-    //           })
-    //         );
-    //       }
-    //       return representado ? registry.id_registro_municipal : undefined;
-    //     })
-    //   );
-    // } else {
-    //   const rims: number[] = await Promise.all(
-    //     await sucursales.map(async (x) => {
-    //       const { inmuebles, liquidaciones, multas, datosSucursal } = x;
-    //       const liquidacionesPagas = liquidaciones.filter((el) => el.estado === 'PAGADO');
-    //       const liquidacionesVigentes = liquidaciones.filter((el) => el.estado !== 'PAGADO');
-    //       const multasPagas = multas.filter((el) => el.estado === 'PAGADO');
-    //       const multasVigentes = multas.filter((el) => el.estado !== 'PAGADO');
-    //       const pagados = liquidacionesPagas.concat(multasPagas);
-    //       const vigentes = liquidacionesVigentes.concat(multasVigentes);
-    //       const { registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado } = datosSucursal;
-    //       let registry;
-    //       const credit = (await client.query(queries.CREATE_OR_UPDATE_FISCAL_CREDIT, [contributor.id_contribuyente, 'NATURAL', datosSucursal.creditoFiscal])).rows[0];
-    //       if (registroMunicipal) {
-    //         registry = (await client.query(queries.CREATE_MUNICIPAL_REGISTRY_FOR_LINKING_CONTRIBUTOR, [contributor.id_contribuyente, registroMunicipal, nombreRepresentante, telefonoMovil, email, denomComercial, representado || false])).rows[0];
-    //         if (x.actividadesEconomicas!.length > 0) {
-    //           await Promise.all(
-    //             actividadesEconomicas!.map(async (x) => {
-    //               return await client.query(queries.CREATE_ECONOMIC_ACTIVITY_FOR_CONTRIBUTOR, [registry.id_registro_municipal, x.id]);
-    //             })
-    //           );
-    //         }
-    //         const estates =
-    //           inmuebles.length > 0
-    //             ? await Promise.all(
-    //                 inmuebles.map(async (el) => {
-    //                   const inmueble = await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [registry.id_registro_municipal, el.direccion, el.tipoInmueble]);
-    //                   await client.query(queries.INSERT_ESTATE_VALUE, [inmueble.rows[0].id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
-    //                 })
-    //               )
-    //             : undefined;
-    //       } else {
-    //         const estates =
-    //           inmuebles.length > 0
-    //             ? await Promise.all(
-    //                 inmuebles.map(async (el) => {
-    //                   const inmueble = (await client.query(queries.CREATE_ESTATE_FOR_LINKING_CONTRIBUTOR, [(registry && registry.id_registro_municipal) || null, el.direccion, el.tipoInmueble])).rows[0];
-    //                   await client.query(queries.LINK_ESTATE_WITH_NATURAL_CONTRIBUTOR, [inmueble.id_inmueble, contributor.id_contribuyente]);
-    //                   await client.query(queries.INSERT_ESTATE_VALUE, [inmueble.id_inmueble, el.ultimoAvaluo.monto, el.ultimoAvaluo.year]);
-    //                   return 0;
-    //                 })
-    //               )
-    //             : undefined;
-    //       }
-    //       if (pagados.length > 0) {
-    //         const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
-    //         await client.query(queries.SET_DATE_FOR_LINKED_APPROVED_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
-    //         await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, applicationStateEvents.APROBARCAJERO]);
-    //         await Promise.all(
-    //           pagados.map(async (el) => {
-    //             const settlement = (
-    //               await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
-    //                 application.id_solicitud,
-    //                 fixatedAmount(+el.monto),
-    //                 el.ramo,
-    //                 { fecha: el.fecha },
-    //                 moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
-    //                 (registry && registry.id_registro_municipal) || null,
-    //               ])
-    //             ).rows[0];
-    //             await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, settlement.id_liquidacion]);
-    //           })
-    //         );
-    //       }
-
-    //       if (vigentes.length > 0) {
-    //         const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [user.id, contributor.id_contribuyente])).rows[0];
-    //         await client.query(queries.SET_DATE_FOR_LINKED_ACTIVE_APPLICATION, [pagados[0].fechaLiquidacion, application.id_solicitud]);
-    //         await Promise.all(
-    //           vigentes.map(async (el) => {
-    //             const settlement = (
-    //               await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
-    //                 application.id_solicitud,
-    //                 fixatedAmount(+el.monto),
-    //                 el.ramo,
-    //                 { fecha: el.fecha },
-    //                 moment().month(el.fecha.month).endOf('month').format('MM-DD-YYYY'),
-    //                 (registry && registry.id_registro_municipal) || null,
-    //               ])
-    //             ).rows[0];
-    //             await client.query(queries.SET_DATE_FOR_LINKED_SETTLEMENT, [el.fechaLiquidacion, settlement.id_liquidacion]);
-    //           })
-    //         );
-    //       }
-    //       return representado ? registry.id_registro_municipal : undefined;
-    //     })
-    //   );
-    // }
-    // await client.query('COMMIT');
-    // return { linked: true };
-  } catch (error) {
-    await client.query('ROLLBACK');
-    mainLogger.error(error);
-    throw {
-      linked: false,
-      status: 500,
-      error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || 'Error al obtener datos del contribuyente',
-    };
-  } finally {
-    client.release();
-    gtic.release();
-  }
-};
 
 /**
  *
  * @param param0
  */
-export const logInExternalLinking = async ({ credentials }) => {
-  const client = await pool.connect();
-  const gtic = await gticPool.connect();
-  try {
-    const { attemptedUser, canBeLinked } = await externalUserForLinkingExists({ user: credentials.nombreUsuario, password: credentials.password, gtic });
-    if (!canBeLinked) return { status: 403, message: 'Credenciales incorrectas' };
-    const contributors = await Promise.all(
-      (
-        await gtic.query(queries.gtic.GET_CONTRIBUTOR_BY_REPRESENTATIVE_USER_EXTENDED, [attemptedUser.id_tb004_contribuyente])
-      ).rows
-        .map(async (el) => {
-          const contributorExists = (await client.query(queries.TAX_PAYER_EXISTS, [el.tx_tp_doc, el.tx_dist_contribuyente === 'J' ? el.tx_rif : el.nu_cedula])).rows;
-          if (contributorExists.length > 0) return getLinkedContributorData(contributorExists[0]);
-          return {
-            datosContribuyente: await getTaxPayerInfo({
-              docType: el.tx_tp_doc,
-              document: el.tx_dist_contribuyente === 'J' ? el.tx_rif : el.nu_cedula,
-              type: el.tx_dist_contribuyente === 'J' ? 'JURIDICO' : 'NATURAL',
-              gtic,
-              client,
-            }),
-            sucursales: await Promise.all(
-              el.tx_dist_contribuyente === 'J'
-                ? (
-                    await gtic.query(queries.gtic.GET_JURIDICAL_CONTRIBUTOR, [el.tx_rif, el.tx_tp_doc])
-                  ).rows.map(async (x) => {
-                    let convenios: any;
-                    const inmuebles = await Promise.all((await gtic.query(queries.gtic.GET_ESTATES_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureEstates(j)));
-                    const liquidaciones = await Promise.all((await gtic.query(queries.gtic.GET_SETTLEMENTS_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureSettlements(j)));
-                    const creditoFiscal = (await gtic.query(queries.gtic.GET_FISCAL_CREDIT_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows[0];
-                    const multas = await Promise.all((await gtic.query(queries.gtic.GET_FININGS_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureFinings(j)));
-                    const actividadesEconomicas = await Promise.all(
-                      (await gtic.query(queries.gtic.CONTRIBUTOR_ECONOMIC_ACTIVITIES, [x.co_contribuyente])).rows.map((x) => ({ id: x.nu_ref_actividad, descripcion: x.tx_actividad, alicuota: x.nu_porc_alicuota, minimoTributable: x.nu_ut }))
-                    );
-                    const agreementRegistry = (await gtic.query('SELECT * FROM tb079_liquidacion INNER JOIN tb046_ae_ramo USING (co_ramo) WHERE co_estatus = 4 AND co_contribuyente = $1', [x.co_contribuyente])).rows;
-                    const hasAgreements = agreementRegistry.length > 0;
-                    if (hasAgreements) {
-                      convenios = (
-                        await Promise.all(
-                          agreementRegistry.map(async (j) => {
-                            const solicitudConvenio = +j.tx_observacion1.split(':')[1];
-                            if (isNaN(solicitudConvenio)) return;
-                            const solicitud = (await gtic.query('SELECT * FROM t15_solicitud WHERE co_solicitud = $1 AND co_estatus != 5', [solicitudConvenio])).rows;
-                            const isCurrentAgreement = solicitud.length > 0;
-                            if (isCurrentAgreement) {
-                              const liquidaciones = (await gtic.query('SELECT * FROM tb079_liquidacion INNER JOIN tb046_ae_ramo USING (co_ramo) WHERE co_solicitud = $1', [solicitud[0].co_solicitud])).rows.map((x) => structureSettlements(x));
-                              return (
-                                (liquidaciones.length > 0 && {
-                                  id: +solicitudConvenio,
-                                  estado: solicitud[0].co_estatus === 1 ? 'VIGENTE' : 'PAGADO',
-                                  idRamo: (await client.query('SELECT id_ramo FROM impuesto.ramo WHERE codigo = $1', [j.nb_ramo])).rows[0].id,
-                                  cantPorciones: liquidaciones.length,
-                                  porciones: liquidaciones.map((i) => {
-                                    i.codigoRamo = j.nb_ramo;
-                                    i.ramo = (j.tx_ramo as string).trim();
-                                    return i;
-                                  }),
-                                }) ||
-                                null
-                              );
-                            }
-                            return null;
-                          })
-                        )
-                      ).filter((el) => el);
-                      convenios = convenios.length > 0 ? uniqBy(convenios, 'id') : undefined;
-                    }
-                    inmuebles.push({
-                      id: x.co_contribuyente,
-                      direccion: nullStringCheck(x.tx_direccion),
-                      email: nullStringCheck(x.tx_email),
-                      razonSocial: nullStringCheck(x.tx_razon_social),
-                      denomComercial: nullStringCheck(x.tx_denom_comercial),
-                      tipoInmueble: 'COMERCIAL',
-                      metrosCuadrados: 0.0,
-                      cuentaContrato: 0.0,
-                      nombreRepresentante: nullStringCheck(x.nb_representante_legal || undefined).trim(),
-                      ultimoAvaluo: { year: moment().year(), monto: 0 },
-                    });
-                    const datosSucursal = {
-                      id: nullStringCheck(x.co_contribuyente),
-                      direccion: nullStringCheck(x.tx_direccion),
-                      email: nullStringCheck(x.tx_email),
-                      razonSocial: nullStringCheck(x.tx_razon_social),
-                      denomComercial: nullStringCheck(x.tx_denom_comercial),
-                      metrosCuadrados: 0.0,
-                      cuentaContrato: 0.0,
-                      nombreRepresentante: nullStringCheck(x.nb_representante_legal || undefined),
-                      telefonoMovil: nullStringCheck(x.nu_telf_representante || x.nu_telf_movil),
-                      registroMunicipal: nullStringCheck(x.nu_referencia),
-                      creditoFiscal: creditoFiscal ? creditoFiscal.mo_haber : 0,
-                    };
-                    return { datosSucursal, inmuebles, liquidaciones, multas, convenios, actividadesEconomicas };
-                  })
-                : (
-                    await gtic.query(queries.gtic.GET_NATURAL_CONTRIBUTOR, [el.nu_cedula, el.tx_tp_doc])
-                  ).rows.map(async (x) => {
-                    let datos;
-                    if (x.nu_referencia) {
-                      let convenios: any;
-                      const inmuebles = await Promise.all((await gtic.query(queries.gtic.GET_ESTATES_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureEstates(j)));
-                      const liquidaciones = await Promise.all((await gtic.query(queries.gtic.GET_SETTLEMENTS_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureSettlements(j)));
-                      const creditoFiscal = (await gtic.query(queries.gtic.GET_FISCAL_CREDIT_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows[0];
-                      const multas = await Promise.all((await gtic.query(queries.gtic.GET_FININGS_BY_MUNICIPAL_REGISTRY, [x.nu_referencia])).rows.map((j) => structureFinings(j)));
-                      const actividadesEconomicas = await Promise.all(
-                        (await gtic.query(queries.gtic.CONTRIBUTOR_ECONOMIC_ACTIVITIES, [x.co_contribuyente])).rows.map((x) => ({ id: x.nu_ref_actividad, descripcion: x.tx_actividad, alicuota: x.nu_porc_alicuota, minimoTributable: x.nu_ut }))
-                      );
-                      const agreementRegistry = (await gtic.query('SELECT * FROM tb079_liquidacion INNER JOIN tb046_ae_ramo USING (co_ramo) WHERE co_estatus = 4 AND co_contribuyente = $1', [x.co_contribuyente])).rows;
-                      const hasAgreements = agreementRegistry.length > 0;
-                      if (hasAgreements) {
-                        convenios = (
-                          await Promise.all(
-                            agreementRegistry.map(async (j) => {
-                              const solicitudConvenio = +j.tx_observacion1.split(':')[1];
-                              if (isNaN(solicitudConvenio)) return;
-                              const solicitud = (await gtic.query('SELECT * FROM t15_solicitud WHERE co_solicitud = $1 AND co_estatus != 5', [solicitudConvenio])).rows;
-                              const isCurrentAgreement = solicitud.length > 0;
-                              if (isCurrentAgreement) {
-                                const liquidaciones = (await gtic.query('SELECT * FROM tb079_liquidacion INNER JOIN tb046_ae_ramo USING (co_ramo) WHERE co_solicitud = $1', [solicitud[0].co_solicitud])).rows.map((x) => structureSettlements(x));
-                                return (
-                                  (liquidaciones.length > 0 && {
-                                    id: +solicitudConvenio,
-                                    estado: solicitud[0].co_estatus === 1 ? 'VIGENTE' : 'PAGADO',
-                                    idRamo: (await client.query('SELECT id_ramo FROM impuesto.ramo WHERE codigo = $1', [j.nb_ramo])).rows[0].id,
-                                    cantPorciones: liquidaciones.length,
-                                    porciones: liquidaciones.map((i) => {
-                                      i.codigoRamo = j.nb_ramo;
-                                      i.ramo = (j.tx_ramo as string).trim();
-                                      return i;
-                                    }),
-                                  }) ||
-                                  null
-                                );
-                              }
-                              return null;
-                            })
-                          )
-                        ).filter((el) => el);
-                        convenios = convenios.length > 0 ? uniqBy(convenios, 'id') : undefined;
-                      }
-                      inmuebles.push({
-                        id: x.co_contribuyente,
-                        direccion: nullStringCheck(x.tx_direccion),
-                        email: nullStringCheck(x.tx_email),
-                        razonSocial: nullStringCheck(x.tx_razon_social),
-                        denomComercial: nullStringCheck(x.tx_denom_comercial),
-                        tipoInmueble: 'RESIDENCIAL',
-                        metrosCuadrados: 0.0,
-                        cuentaContrato: 0.0,
-                        nombreRepresentante: nullStringCheck(x.nb_representante_legal || undefined).trim(),
-                        ultimoAvaluo: { year: moment().year(), monto: 0 },
-                      });
-                      const datosSucursal = {
-                        id: nullStringCheck(x.co_contribuyente),
-                        direccion: nullStringCheck(x.tx_direccion),
-                        email: nullStringCheck(x.tx_email),
-                        razonSocial: nullStringCheck(x.tx_razon_social),
-                        denomComercial: nullStringCheck(x.tx_denom_comercial),
-                        metrosCuadrados: 0.0,
-                        cuentaContrato: 0.0,
-                        nombreRepresentante: nullStringCheck(x.nb_representante_legal || undefined),
-                        telefonoMovil: nullStringCheck(x.nu_telf_representante || x.nu_telf_movil),
-                        registroMunicipal: nullStringCheck(x.nu_referencia),
-                        creditoFiscal: creditoFiscal ? creditoFiscal.mo_haber : 0,
-                      };
-                      datos = {
-                        datosSucursal,
-                        inmuebles,
-                        liquidaciones,
-                        multas,
-                        convenios,
-                        actividadesEconomicas,
-                      };
-                    } else {
-                      const liquidaciones = await Promise.all((await gtic.query(queries.gtic.GET_SETTLEMENTS_BY_CONTRIBUTOR, [x.co_contribuyente])).rows.map((j) => structureSettlements(j)));
-                      const creditoFiscal = (await gtic.query(queries.gtic.GET_FISCAL_CREDIT_BY_CONTRIBUTOR, [x.co_contribuyente])).rows[0];
-                      const inmuebles = await Promise.all((await gtic.query(queries.gtic.GET_ESTATES_BY_CONTRIBUTOR, [x.co_contribuyente])).rows.map((j) => structureEstates(j)));
-                      const multas = await Promise.all((await gtic.query(queries.gtic.GET_FININGS_BY_CONTRIBUTOR, [x.co_contribuyente])).rows.map((j) => structureFinings(j)));
-                      const datosSucursal = {
-                        id: nullStringCheck(x.co_contribuyente),
-                        direccion: nullStringCheck(x.tx_direccion),
-                        email: nullStringCheck(x.tx_email),
-                        razonSocial: nullStringCheck(x.tx_razon_social),
-                        denomComercial: nullStringCheck(x.tx_denom_comercial),
-                        metrosCuadrados: 0.0,
-                        cuentaContrato: 0.0,
-                        nombreRepresentante: nullStringCheck(x.nb_representante_legal || undefined),
-                        telefonoMovil: nullStringCheck(x.nu_telf_representante || x.nu_telf_movil),
-                        creditoFiscal: creditoFiscal ? creditoFiscal.mo_haber : 0,
-                      };
-                      datos = {
-                        // datosSucursal,
-                        inmuebles,
-                        liquidaciones,
-                        multas,
-                      };
-                    }
-                    return datos;
-                  })
-            ),
-            actividadesEconomicas: await Promise.all(
-              (
-                await gtic.query(el.tx_dist_contribuyente === 'J' ? queries.gtic.ECONOMIC_ACTIVITIES_JURIDICAL : queries.gtic.ECONOMIC_ACTIVIES_NATURAL, [el.tx_tp_doc, el.tx_dist_contribuyente === 'J' ? el.tx_rif : el.nu_cedula])
-              ).rows.map((x) => ({
-                id: x.nu_ref_actividad,
-                descripcion: x.tx_actividad,
-                alicuota: x.nu_porc_alicuota,
-                minimoTributable: x.nu_ut,
-              }))
-            ),
-            sinSucursales: false,
-          };
-        })
-        .filter((el) => el)
-    );
-    if (contributors.every((el) => el.hasOwnProperty('sinSucursales') && el.sinSucursales)) return { status: 409, message: 'El usuario ya ha importado y actualizado todas sus sucursales' };
-    return { status: 200, message: 'Informacion de enlace de cuenta obtenida', datosEnlace: contributors };
-  } catch (error) {
-    mainLogger.error(error);
-    throw {
-      status: 500,
-      error: errorMessageExtractor(error),
-      message: errorMessageGenerator(error) || 'Error al obtener datos del contribuyente',
-    };
-  } finally {
-    client.release();
-    gtic.release();
-  }
-};
 
 /**
  *
@@ -1577,22 +856,6 @@ const getLinkedContributorData = async (contributor: any) => {
  *
  * @param param0
  */
-const externalUserForLinkingExists = async ({ user, password, gtic }: { user: string; password: string; gtic: PoolClient }) => {
-  try {
-    const gticUser = (await gtic.query(queries.gtic.GET_REPRESENTATIVE_BY_EMAIL, [user])).rows;
-    if (!gticUser[0]) return { canBeLinked: false };
-    const isAttemptedUser = gticUser
-      .map((el) => ({
-        loggedIn: el.tx_password.startsWith('$') ? bcrypt.compareSync(password, el.tx_password) : md5(password) === el.tx_password,
-        contribuyente: el,
-      }))
-      .find((x) => x.loggedIn);
-    mainLogger.info(isAttemptedUser);
-    return { attemptedUser: isAttemptedUser?.contribuyente, canBeLinked: isAttemptedUser?.loggedIn };
-  } catch (e) {
-    throw errorMessageExtractor(e);
-  }
-};
 
 /**
  *
@@ -3617,13 +2880,8 @@ export const internalUserImport = async ({ reference, docType, document, typeUse
     const branch = (await client.query(queries.GET_MUNICIPAL_REGISTRY_BY_RIM_AND_CONTRIBUTOR, [reference, contributor?.id_contribuyente])).rows[0];
     // if (!!reference && !branch) throw { status: 404, message: 'No existe la sucursal solicitada' };
     const branchIsUpdated = branch?.actualizado;
-    if (!contributor || (!!contributor && !!reference && !branchIsUpdated)) {
-      const x = await externalLinkingForCashier({ document, docType, reference, user, typeUser });
-      if (x.every((el) => el.hasOwnProperty('sinSucursales') && el.sinSucursales)) return { status: 200, message: 'El usuario ya esta registrado y actualizado, proceda a enlazarlo' };
-      return { status: 202, message: 'Informacion de enlace de cuenta obtenida', datosEnlace: x };
-    } else {
-      return { status: 200, message: 'El usuario ya esta registrado y actualizado, proceda a enlazarlo' };
-    }
+    return { status: 200, message: 'El usuario ya esta registrado y actualizado, proceda a enlazarlo' };
+    
   } catch (error) {
     mainLogger.error(error);
     throw {
@@ -4201,7 +3459,6 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
  */
 export const createCertificateForApplication = async ({ idLiquidacion, media, user }) => {
   const client = await pool.connect();
-  const gtic = await gticPool.connect();
   try {
     client.query('BEGIN');
     const settlement = (await client.query('SELECT id_solicitud FROM impuesto.liquidacion WHERE id_liquidacion = $1', [idLiquidacion])).rows[0].id_solicitud;
@@ -4209,7 +3466,6 @@ export const createCertificateForApplication = async ({ idLiquidacion, media, us
     // if (applicationView[media]) return { status: 200, message: 'Certificado generado satisfactoriamente', media: applicationView[media] };
     // const dirs = await Promise.all(applicationView.map( async applicationView => {
       const dir = await certificateCreationHandler(applicationView.descripcionCortaRamo, media, {
-        gticPool: gtic,
         pool: client,
         user,
         application: applicationView,
@@ -4229,7 +3485,6 @@ export const createCertificateForApplication = async ({ idLiquidacion, media, us
     };
   } finally {
     client.release();
-    gtic.release();
   }
 };
 const mesesCardinal = {
@@ -4369,7 +3624,7 @@ const createABSolvenciesForApplication = async ({application}) => {
 }
 }
 
-const createSolvencyForApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
+const createSolvencyForApplication = async ({ pool, user, application }: CertificatePayload) => {
   try {
     const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
     const linkQr = await qr.toDataURL(`${process.env.CLIENT_URL}/validarSedemat/${application.id}`, { errorCorrectionLevel: 'H' });
@@ -4431,7 +3686,7 @@ const createSolvencyForApplication = async ({ gticPool, pool, user, application 
   }
 };
 
-const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
+const createReceiptForSMOrIUApplication = async ({ pool, user, application }: CertificatePayload) => {
   try {
     let certInfo;
     let motivo;
@@ -4844,7 +4099,7 @@ const createReceiptForSMOrIUApplication = async ({ gticPool, pool, user, applica
   }
 };
 
-const createReceiptForIUApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
+const createReceiptForIUApplication = async ({ pool, user, application }: CertificatePayload) => {
   try {
     let certInfo;
     let motivo;
@@ -5302,7 +4557,7 @@ const createReceiptForSpecialApplication = async ({ client, user, application })
   }
 };
 
-const createReceiptForAEApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
+const createReceiptForAEApplication = async ({ pool, user, application }: CertificatePayload) => {
   try {
     if (application.idSubramo === 23) throw new Error('No es una liquidacion admisible para generar recibo');
     if (application.idSubramo === 235) throw new Error('Certificado no disponible');
@@ -5536,7 +4791,7 @@ const createReceiptForAEApplication = async ({ gticPool, pool, user, application
     throw errorMessageExtractor(error);
   }
 };
-const createReceiptForPPApplication = async ({ gticPool, pool, user, application }: CertificatePayload) => {
+const createReceiptForPPApplication = async ({ pool, user, application }: CertificatePayload) => {
   try {
     if (application.idSubramo !== 12) throw new Error('No se puede generar este recibo');
 
@@ -5728,7 +4983,7 @@ const createReceiptForPPApplication = async ({ gticPool, pool, user, application
   }
 };
 
-const createPatentDocument = async ({ gticPool, pool, user, application }: CertificatePayload) => {
+const createPatentDocument = async ({ pool, user, application }: CertificatePayload) => {
   try {
     const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
     const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, application.idSubramo])).rows;
@@ -5825,7 +5080,7 @@ const createPatentDocument = async ({ gticPool, pool, user, application }: Certi
   }
 };
 
-const createFineDocument = async ({ gticPool, pool, user, application }: CertificatePayload) => {
+const createFineDocument = async ({ pool, user, application }: CertificatePayload) => {
   try {
     const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [application.idLiquidacion])).rows[0];
     const breakdownData = (await pool.query(queries.GET_BREAKDOWN_AND_SETTLEMENT_INFO_BY_ID, [application.id, application.idSubramo])).rows;
@@ -5895,7 +5150,6 @@ const createFineDocument = async ({ gticPool, pool, user, application }: Certifi
  */
 export const createAccountStatement = async ({ contributor, reference, typeUser, idCargo }) => {
   const client = await pool.connect();
-  const gtic = await gticPool.connect();
   try {
     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
     const paymentState = switchcase({ ingresardatos: 'VIGENTE', validando: 'VIGENTE', finalizado: 'PAGADO' })(null);
@@ -5985,7 +5239,6 @@ export const createAccountStatement = async ({ contributor, reference, typeUser,
       message: errorMessageGenerator(error) || 'Error al crear el certificado',
     };
   } finally {
-    gtic.release();
     client.release();
   }
 };
@@ -6308,7 +5561,6 @@ const monthToTrimester = (month: number) => {
 }
 
 interface CertificatePayload {
-  gticPool: PoolClient;
   pool: PoolClient;
   user: Usuario;
   application: any;
@@ -6344,198 +5596,3 @@ interface datoLiquidacion {
   estado: string;
   montoPorcion: number;
 }
-
-// export const getSettlements = async ({ document, reference, type, user }) => {
-//   const client = await pool.connect();
-//   const gtic = await gticPool.connect();
-//   const montoAcarreado: any = {};
-//   let AE, SM, IU, PP;
-//   try {
-//     const AEApplicationExists = (await client.query(queries.CURRENT_AE_APPLICATION_EXISTS, [document, reference, type])).rows[0];
-//     const SMApplicationExists = (await client.query(queries.CURRENT_SM_APPLICATION_EXISTS, [document, reference, type])).rows[0];
-//     const IUApplicationExists = (await client.query(queries.CURRENT_IU_APPLICATION_EXISTS, [document, reference, type])).rows[0];
-//     const PPApplicationExists = (await client.query(queries.CURRENT_PP_APPLICATION_EXISTS, [document, reference, type])).rows[0];
-
-//     if (AEApplicationExists && SMApplicationExists && IUApplicationExists && PPApplicationExists) return { status: 409, message: 'Ya existe una declaracion de impuestos para este mes' };
-//     const contributor = (reference ? await gtic.query(queries.gtic.JURIDICAL_CONTRIBUTOR_EXISTS, [document, reference, type]) : await gtic.query(queries.gtic.NATURAL_CONTRIBUTOR_EXISTS, [document, type])).rows[0];
-//     if (!contributor) return { status: 404, message: 'No existe un contribuyente registrado en HACIENDA' };
-//     const now = moment(new Date());
-//     const PETRO = (await client.query(queries.GET_PETRO_VALUE)).rows[0].valor_en_bs;
-//     //AE
-//     if (contributor.nu_referencia && !AEApplicationExists) {
-//       const economicActivities = (await gtic.query(queries.gtic.CONTRIBUTOR_ECONOMIC_ACTIVITIES, [contributor.co_contribuyente])).rows;
-//       if (economicActivities.length === 0) return { status: 404, message: 'Debe completar su pago en las oficinas de HACIENDA' };
-//       let lastEA = (await gtic.query(queries.gtic.GET_ACTIVE_ECONOMIC_ACTIVITIES_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
-//       if (!lastEA) lastEA = (await gtic.query(queries.gtic.GET_PAID_ECONOMIC_ACTIVITIES_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
-//       if (!lastEA) return { status: 404, message: 'Debe completar su pago en las oficinas de HACIENDA' };
-//       const lastEAPayment = moment(lastEA.fe_liquidacion);
-//       const pastMonthEA = moment(lastEA.fe_liquidacion).subtract(1, 'M');
-//       const EADate = moment([lastEAPayment.year(), lastEAPayment.month(), 1]);
-//       const dateInterpolation = Math.floor(now.diff(EADate, 'M'));
-//       montoAcarreado.AE = {
-//         monto: lastEA.mo_pendiente ? parseFloat(lastEA.mo_pendiente) : 0,
-//         fecha: { month: pastMonthEA.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthEA.year() },
-//       };
-//       if (dateInterpolation !== 0) {
-//         AE = economicActivities.map((el) => {
-//           return {
-//             id: el.nu_ref_actividad,
-//             minimoTributable: Math.round(el.nu_ut) * PETRO,
-//             nombreActividad: el.tx_actividad,
-//             idContribuyente: el.co_contribuyente,
-//             alicuota: el.nu_porc_alicuota / 100,
-//             costoSolvencia: PETRO * 2,
-//             deuda: new Array(dateInterpolation).fill({ month: null, year: null }).map((value, index) => {
-//               const date = addMonths(new Date(lastEAPayment.toDate()), index);
-//               return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
-//             }),
-//           };
-//         });
-//       }
-//     }
-//     //SM
-//     const estates = (await gtic.query(queries.gtic.GET_ESTATES_BY_CONTRIBUTOR, [contributor.co_contribuyente])).rows;
-//     if (estates.length > 0) {
-//       if (!SMApplicationExists) {
-//         let lastSM = (await gtic.query(queries.gtic.GET_ACTIVE_MUNICIPAL_SERVICES_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
-//         if (!lastSM) lastSM = (await gtic.query(queries.gtic.GET_PAID_MUNICIPAL_SERVICES_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
-//         if (!lastSM) return { status: 404, message: 'Debe completar su pago en las oficinas de HACIENDA' };
-//         const lastSMPayment = moment(lastSM.fe_liquidacion);
-//         const pastMonthSM = moment(lastSM.fe_liquidacion).subtract(1, 'M');
-//         const SMDate = moment([lastSMPayment.year(), lastSMPayment.month(), 1]);
-//         const dateInterpolationSM = Math.floor(now.diff(SMDate, 'M'));
-//         montoAcarreado.SM = {
-//           monto: lastSM.mo_pendiente ? parseFloat(lastSM.mo_pendiente) : 0,
-//           fecha: { month: pastMonthSM.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthSM.year() },
-//         };
-//         const debtSM = new Array(dateInterpolationSM).fill({ month: null, year: null }).map((value, index) => {
-//           const date = addMonths(new Date(lastSMPayment.toDate()), index);
-//           return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
-//         });
-//         SM = await Promise.all(
-//           estates.map(async (el) => {
-//             const calculoAseo =
-//               el.tx_tp_inmueble === 'COMERCIAL'
-//                 ? el.nu_metro_cuadrado && el.nu_metro_cuadrado !== 0
-//                   ? 0.15 * el.nu_metro_cuadrado
-//                   : (await gtic.query(queries.gtic.GET_MAX_CLEANING_TARIFF_BY_CONTRIBUTOR, [contributor.co_contribuyente])).rows[0].nu_tarifa
-//                 : (await gtic.query(queries.gtic.GET_RESIDENTIAL_CLEANING_TARIFF)).rows[0].nu_tarifa;
-//             const tarifaAseo = calculoAseo / PETRO > 300 ? PETRO * 300 : calculoAseo;
-//             const calculoGas =
-//               el.tx_tp_inmueble === 'COMERCIAL' ? (await gtic.query(queries.gtic.GET_MAX_GAS_TARIFF_BY_CONTRIBUTOR, [contributor.co_contribuyente])).rows[0].nu_tarifa : (await gtic.query(queries.gtic.GET_RESIDENTIAL_GAS_TARIFF)).rows[0].nu_tarifa;
-//             const tarifaGas = calculoGas / PETRO > 300 ? PETRO * 300 : calculoGas;
-//             return { id: el.co_inmueble, tipoInmueble: el.tx_tp_inmueble, direccionInmueble: el.tx_direccion, tarifaAseo, tarifaGas, deuda: debtSM };
-//           })
-//         );
-//       }
-
-//       //IU
-//       if (!IUApplicationExists) {
-//         let lastIU = (await gtic.query(queries.gtic.GET_ACTIVE_URBAN_ESTATE_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
-//         if (!lastIU) lastIU = (await gtic.query(queries.gtic.GET_PAID_URBAN_ESTATE_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
-//         if (!lastIU) return { status: 404, message: 'Debe completar su pago en las oficinas de HACIENDA' };
-//         const lastIUPayment = moment(lastIU.fe_liquidacion);
-//         const pastMonthIU = moment(lastIU.fe_liquidacion).subtract(1, 'M');
-//         const IUDate = moment([lastIUPayment.year(), lastIUPayment.month(), 1]);
-//         const dateInterpolationIU = Math.floor(now.diff(IUDate, 'M'));
-//         montoAcarreado.IU = {
-//           monto: lastIU.mo_pendiente ? parseFloat(lastIU.mo_pendiente) : 0,
-//           fecha: { month: pastMonthIU.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthIU.year() },
-//         };
-//         if (dateInterpolationIU > 0) {
-//           const debtIU = new Array(dateInterpolationIU).fill({ month: null, year: null }).map((value, index) => {
-//             const date = addMonths(new Date(lastIUPayment.toDate()), index);
-//             return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
-//           });
-//           IU = estates.map((el) => {
-//             return {
-//               id: el.co_inmueble,
-//               direccionInmueble: el.tx_direccion,
-//               ultimoAvaluo: el.nu_monto,
-//               impuestoInmueble: (el.nu_monto * 0.01) / 12,
-//               deuda: debtIU,
-//             };
-//           });
-//         }
-//       }
-//     }
-
-//     //PP
-//     if (!PPApplicationExists) {
-//       let debtPP;
-//       let lastPP = (await gtic.query(queries.gtic.GET_ACTIVE_PUBLICITY_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
-//       if (!lastPP) lastPP = (await gtic.query(queries.gtic.GET_PAID_PUBLICITY_SETTLEMENT, [contributor.co_contribuyente])).rows[0];
-//       if (lastPP) {
-//         const lastPPPayment = moment(lastPP.fe_liquidacion);
-//         const pastMonthPP = moment(lastPP.fe_liquidacion).subtract(1, 'M');
-//         const PPDate = moment([lastPPPayment.year(), lastPPPayment.month(), 1]);
-//         const dateInterpolationPP = Math.floor(now.diff(PPDate, 'M'));
-//         montoAcarreado.PP = {
-//           monto: lastPP.mo_pendiente ? parseFloat(lastPP.mo_pendiente) : 0,
-//           fecha: { month: pastMonthPP.toDate().toLocaleString('es-ES', { month: 'long' }), year: pastMonthPP.year() },
-//         };
-//         if (dateInterpolationPP > 0) {
-//           debtPP = new Array(dateInterpolationPP).fill({ month: null, year: null }).map((value, index) => {
-//             const date = addMonths(new Date(lastPPPayment.toDate()), index);
-//             return { month: date.toLocaleString('es-ES', { month: 'long' }), year: date.getFullYear() };
-//           });
-//         }
-//       } else {
-//         debtPP = new Array(now.month() + 1).fill({ month: null, year: null }).map((value, index) => {
-//           const date = addMonths(moment(`${now.year()}-01-01`).toDate(), index);
-//           return { month: date.toLocaleString('ES', { month: 'long' }), year: date.getFullYear() };
-//         });
-//       }
-//       if (debtPP) {
-//         const publicityArticles = (await gtic.query(queries.gtic.GET_PUBLICITY_ARTICLES)).rows;
-//         const publicitySubarticles = (await gtic.query(queries.gtic.GET_PUBLICITY_SUBARTICLES)).rows;
-//         PP = {
-//           deuda: debtPP,
-//           articulos: publicityArticles.map((el) => {
-//             return {
-//               id: +el.co_articulo,
-//               nombreArticulo: el.tx_articulo,
-//               subarticulos: publicitySubarticles
-//                 .filter((al) => +el.co_articulo === al.co_articulo)
-//                 .map((el) => {
-//                   return {
-//                     id: +el.co_medio,
-//                     nombreSubarticulo: el.tx_medio,
-//                     parametro: el.parametro,
-//                     costo: +el.ut_medio * PETRO,
-//                     costoAlto: el.parametro === 'BANDA' ? (+el.ut_medio + 2) * PETRO : undefined,
-//                   };
-//                 }),
-//             };
-//           }),
-//         };
-//       }
-//     }
-//     return {
-//       status: 200,
-//       message: 'Impuestos obtenidos satisfactoriamente',
-//       impuesto: {
-//         contribuyente: contributor.co_contribuyente,
-//         razonSocial: contributor.tx_razon_social || `${contributor.nb_contribuyente} ${contributor.ap_contribuyente}`,
-//         siglas: contributor.tx_siglas,
-//         rim: contributor.nu_referencia,
-//         documento: contributor.tx_rif || contributor.nu_cedula,
-//         AE,
-//         SM,
-//         IU,
-//         PP,
-//         montoAcarreado: addMissingCarriedAmounts(montoAcarreado),
-//       },
-//     };
-//   } catch (error) {
-//     mainLogger.error(error);
-//     throw {
-//       status: 500,
-//       error: errorMessageExtractor(error),
-//       message: errorMessageGenerator(error) || 'Error al obtener los impuestos',
-//     };
-//   } finally {
-//     client.release();
-//     gtic.release();
-//   }
-// };

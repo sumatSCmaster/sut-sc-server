@@ -8,9 +8,7 @@ import {
   addTaxApplicationPayment,
   createCertificateForApplication,
   createAccountStatement,
-  getTaxPayerInfo,
   getApplicationsAndSettlementsForContributor,
-  logInExternalLinking,
   verifyUserLinking,
   initialUserLinking,
   getEntireDebtsForContributor,
@@ -182,16 +180,6 @@ router.post('/receipt/:id/agreement', authenticate('jwt'), async (req: any, res)
   if (error) res.status(500).json(error);
   if (data) res.status(200).json({ url: data, message: 'Recibo generado', status: 200 });
 });
-
-router.post(
-  '/login',
-  /*authenticate('jwt'), */ async (req, res) => {
-    const { usuario } = req.body;
-    const [error, data] = await fulfill(logInExternalLinking({ credentials: usuario }));
-    if (error) res.status(500).json(error);
-    if (data) res.status(data.status).json(data);
-  }
-);
 
 // router.post('/benefits', authenticate('jwt'), async (req, res) => {
 //   const { contribuyente } = req.body;
