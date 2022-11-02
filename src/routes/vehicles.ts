@@ -2,10 +2,24 @@ import { Router } from 'express';
 import { authenticate } from 'passport';
 import { getIdByRif, getIdByRim } from '@utils/user';
 import { fulfill } from '@utils/resolver';
-import { getVehiclesByContributor, getBrands, getVehicleTypes, createVehicle, updateVehicle, deleteVehicle, checkVehicleExists, createVehicleForRim, linkVehicle, unlinkVehicle, updateVehicleDate, getVehiclesByContributorInternal } from '@helpers/vehicles';
+import {
+  getVehiclesByContributor,
+  getBrands,
+  getVehicleTypes,
+  createVehicle,
+  updateVehicle,
+  deleteVehicle,
+  checkVehicleExists,
+  createVehicleForRim,
+  linkVehicle,
+  unlinkVehicle,
+  updateVehicleDate,
+  getVehiclesByContributorInternal,
+  linkVehicleCon,
+} from '@helpers/vehicles';
 
 const router = Router();
- 
+
 router.get('/getByRif/:rif/:pref', authenticate('jwt'), async (req, res) => {
   const { rif, pref } = req.params;
   const { id_contribuyente } = await getIdByRif(rif, pref);
@@ -65,6 +79,14 @@ router.post('/link', authenticate('jwt'), async (req: any, res) => {
   if (data) res.status(data.status).json(data);
 });
 
+router.post('/linkCon', authenticate('jwt'), async (req: any, res) => {
+  const { placa, id, isRim } = req.body;
+  req.user.id = id;
+  const [err, data] = await fulfill(linkVehicleCon(placa, id, isRim));
+  if (err) res.status(err.status).json(err);
+  if (data) res.status(data.status).json(data);
+});
+
 router.post('/unlink', authenticate('jwt'), async (req: any, res) => {
   const { idVehiculo } = req.body;
   const [err, data] = await fulfill(unlinkVehicle(idVehiculo));
@@ -98,6 +120,6 @@ router.patch('/date', authenticate('jwt'), async (req: any, res) => {
   const [error, data] = await fulfill(updateVehicleDate(req.body));
   if (error) res.status(500).json(error);
   if (data) res.status(data.status).json(data);
-})
+});
 
 export default router;
