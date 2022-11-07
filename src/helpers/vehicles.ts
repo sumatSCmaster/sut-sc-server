@@ -91,13 +91,13 @@ export const getVehicleTypes = async (): Promise<Response & { tipoVehiculo: Vehi
       //   }
       //   return;
       // });
-      const response = (await client.query(queries.GET_VEHICLE_CATEGORIES)).rows.map(async cat => {
+      const response = (await client.query(queries.GET_VEHICLE_CATEGORIES)).rows.map(async (cat) => {
         if (client) {
           cat.subcategoria = await Promise.all(await getVehicleSubcategoriesByCategory(cat.id, client));
           return cat;
         }
         return;
-      })
+      });
       categories = await Promise.all(response);
       await redisClient.setAsync(REDIS_KEY, JSON.stringify(categories));
       await redisClient.expireAsync(REDIS_KEY, 36000);
@@ -202,7 +202,7 @@ export const getVehiclesByContributor = async (id?: number, rim?: number): Promi
   const client = await pool.connect();
   try {
     const idContribuyente = (await client.query('SELECT id_contribuyente FROM usuario WHERE id_usuario = $1', [id])).rows[0]?.id_contribuyente;
-    if (!idContribuyente) throw {status: 401, message: 'Debes ser un contribuyente para acceder a los impuestos vehiculares'}
+    if (!idContribuyente) throw { status: 401, message: 'Debes ser un contribuyente para acceder a los impuestos vehiculares' };
     const vehicles: Vehicle[] = id ? (await client.query(queries.GET_VEHICLES_BY_CONTRIBUTOR, [idContribuyente])).rows : (await client.query(queries.GET_VEHICLES_BY_MUNICIPAL_REFERENCE, [rim])).rows;
     return { status: 200, message: 'Vehiculos del contribuyente obtenidos', vehiculos: vehicles };
   } catch (error) {
@@ -227,7 +227,8 @@ export const createVehicleForRim = async (payload: Vehicle, user: Usuario): Prom
   const { marca, subcategoria, modelo, placa, anio, color, serialCarroceria, tipoCarroceria, tipoCombustible, peso, cilindraje, serialMotor, cedulaPropietario, nombrePropietario } = payload;
   try {
     await client.query('BEGIN');
-    const response = (await client.query(queries.CREATE_VEHICLE, [marca, user.id, subcategoria, modelo, placa, anio, color, serialCarroceria, tipoCarroceria, tipoCombustible, peso, cilindraje, serialMotor, cedulaPropietario, nombrePropietario])).rows[0];
+    const response = (await client.query(queries.CREATE_VEHICLE, [marca, user.id, subcategoria, modelo, placa, anio, color, serialCarroceria, tipoCarroceria, tipoCombustible, peso, cilindraje, serialMotor, cedulaPropietario, nombrePropietario]))
+      .rows[0];
     await client.query('COMMIT');
     const brand = (await client.query(queries.GET_VEHICLE_BRAND_BY_ID, [response.id_marca_vehiculo])).rows[0].descripcion;
     const responseVehicle = (await client.query(queries.GET_VEHICLE_BY_ID, [response.id_vehiculo])).rows[0];
@@ -247,11 +248,11 @@ export const createVehicleForRim = async (payload: Vehicle, user: Usuario): Prom
       idCategoria: responseVehicle.id_categoria_vehiculo,
       categoria: responseVehicle?.categoria ?? '',
       fechaUltimaActualizacion: response.fecha_ultima_actualizacion,
-      peso: response.peso_vehiculo, 
-      cilindraje: response.cilindraje_vehiculo, 
+      peso: response.peso_vehiculo,
+      cilindraje: response.cilindraje_vehiculo,
       serialMotor: response.serial_motor_vehiculo,
       cedulaPropietario: response.cedula_propietario,
-      nombrePropietario: response.nombre_propietario
+      nombrePropietario: response.nombre_propietario,
     };
     return { status: 201, message: 'Vehiculo creado satisfactoriamente', vehiculo: vehicle };
   } catch (error) {
@@ -272,10 +273,11 @@ export const createVehicle = async (payload: Vehicle, user: Usuario): Promise<Re
   const { marca, subcategoria, modelo, placa, anio, color, serialCarroceria, tipoCarroceria, tipoCombustible, peso, cilindraje, serialMotor, cedulaPropietario, nombrePropietario } = payload;
   try {
     await client.query('BEGIN');
-    const response = (await client.query(queries.CREATE_VEHICLE, [marca, null, subcategoria, modelo, placa, anio, color, serialCarroceria, tipoCarroceria, tipoCombustible, peso, cilindraje, serialMotor, cedulaPropietario, nombrePropietario])).rows[0];
+    const response = (await client.query(queries.CREATE_VEHICLE, [marca, null, subcategoria, modelo, placa, anio, color, serialCarroceria, tipoCarroceria, tipoCombustible, peso, cilindraje, serialMotor, cedulaPropietario, nombrePropietario]))
+      .rows[0];
     const idContribuyente = (await client.query('SELECT id_contribuyente FROM usuario WHERE id_usuario = $1', [user.id])).rows[0]?.id_contribuyente;
     if (idContribuyente) {
-      await client.query(`INSERT INTO impuesto.vehiculo_contribuyente(id_vehiculo, id_contribuyente) VALUES($1, $2)`, [response.id_vehiculo, idContribuyente])
+      await client.query(`INSERT INTO impuesto.vehiculo_contribuyente(id_vehiculo, id_contribuyente) VALUES($1, $2)`, [response.id_vehiculo, idContribuyente]);
     }
     await client.query('COMMIT');
     const brand = (await client.query(queries.GET_VEHICLE_BRAND_BY_ID, [response.id_marca_vehiculo])).rows[0].descripcion;
@@ -296,11 +298,11 @@ export const createVehicle = async (payload: Vehicle, user: Usuario): Promise<Re
       idCategoria: responseVehicle.id_categoria_vehiculo,
       categoria: responseVehicle?.categoria ?? '',
       fechaUltimaActualizacion: response.fecha_ultima_actualizacion,
-      peso: response.peso_vehiculo, 
-      cilindraje: response.cilindraje_vehiculo, 
+      peso: response.peso_vehiculo,
+      cilindraje: response.cilindraje_vehiculo,
       serialMotor: response.serial_motor_vehiculo,
       cedulaPropietario: response.cedula_propietario,
-      nombrePropietario: response.nombre_propietario
+      nombrePropietario: response.nombre_propietario,
     };
     return { status: 201, message: 'Vehiculo creado satisfactoriamente', vehiculo: vehicle };
   } catch (error) {
@@ -316,16 +318,44 @@ export const createVehicle = async (payload: Vehicle, user: Usuario): Promise<Re
   }
 };
 
-export const linkVehicle = async(placa: string, id: number, isRim: boolean) => {
+export const linkVehicleCon = async (placa: string, id: number, isRim: boolean) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
     const idVehiculo = (await client.query('SELECT id_vehiculo FROM impuesto.vehiculo WHERE placa_vehiculo = $1', [placa])).rows[0]?.id_vehiculo;
-    if (!idVehiculo) throw {status: 401, message: 'El vehiculo no esta registrado en el sistema SUT'};
+    if (!idVehiculo) throw { status: 401, message: 'El vehiculo no esta registrado en el sistema SUT' };
+    const contribuyente = (await client.query('SELECT * FROM impuesto.contribuyente INNER JOIN impuesto.registro_municipal using(id_contribuyente) WHERE id_registro_municipal = $1 ', [id])).rows[0];
+
+    await client.query('UPDATE impuesto.vehiculo SET id_registro_municipal = $1 WHERE id_vehiculo = $2', [id, idVehiculo]);
+    await client.query('UPDATE impuesto.vehiculo_contribuyente SET id_contribuyente = $1 WHERE id_vehiculo = $2', [contribuyente.id_contribuyente, idVehiculo]);
+
+    await client.query('COMMIT');
+    return { status: 201, message: 'usuario enlazado a este vehiculo' };
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw { status: 500, message: e.message };
+  } finally {
+    client.release();
+  }
+};
+
+export const linkVehicle = async (placa: string, id: number, isRim: boolean) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const idVehiculo = (await client.query('SELECT id_vehiculo FROM impuesto.vehiculo WHERE placa_vehiculo = $1', [placa])).rows[0]?.id_vehiculo;
+    if (!idVehiculo) throw { status: 401, message: 'El vehiculo no esta registrado en el sistema SUT' };
     const enlazadoARim = (await client.query('SELECT * FROM impuesto.vehiculo WHERE id_registro_municipal IS NOT NULL AND id_vehiculo = $1', [idVehiculo])).rows[0];
     const enlazadoARif = (await client.query('SELECT * FROM impuesto.vehiculo_contribuyente WHERE id_vehiculo = $1', [idVehiculo])).rows[0];
-    if (enlazadoARif || enlazadoARim) throw {status: 406, message: 'El vehiculo ya esta enlazado a otro contribuyente'};
-    isRim ? await client.query('UPDATE impuesto.vehiculo SET id_registro_municipal = $1 WHERE id_vehiculo = $2', [id, idVehiculo]) : await client.query('INSERT INTO impuesto.vehiculo_contribuyente(id_vehiculo, id_contribuyente) VALUES ($1, $2)', [idVehiculo, id]);
+    if (enlazadoARif || enlazadoARim) {
+      const enlazadoContribuyente = (await client.query('SELECT * FROM impuesto.contribuyente WHERE  id_contribuyente = $1', [enlazadoARif.id_contribuyente])).rows[0];
+      return { status: 201, message: 'usuario enlazado a este vehiculo', enlazadoContribuyente };
+    }
+
+    // throw {status: 406, message: 'El vehiculo ya esta enlazado a otro contribuyente'};
+    isRim
+      ? await client.query('UPDATE impuesto.vehiculo SET id_registro_municipal = $1 WHERE id_vehiculo = $2', [id, idVehiculo])
+      : await client.query('INSERT INTO impuesto.vehiculo_contribuyente(id_vehiculo, id_contribuyente) VALUES ($1, $2)', [idVehiculo, id]);
     const vehicles: Vehicle[] = !isRim ? (await client.query(queries.GET_VEHICLES_BY_CONTRIBUTOR, [id])).rows : (await client.query(queries.GET_VEHICLES_BY_MUNICIPAL_REFERENCE, [id])).rows;
     // const response = (await client.query('SELECT * FROM impuesto.vehiculo WHERE placa_vehiculo = $1', [placa])).rows[0];
     // const brand = (await client.query(queries.GET_VEHICLE_BRAND_BY_ID, [response.id_marca_vehiculo])).rows[0].descripcion;
@@ -347,38 +377,38 @@ export const linkVehicle = async(placa: string, id: number, isRim: boolean) => {
     //   idCategoria: responseVehicle.id_categoria_vehiculo,
     //   categoria: responseVehicle.categoria,
     //   fechaUltimaActualizacion: response.fecha_ultima_actualizacion,
-    //   peso: response.peso_vehiculo, 
-    //   cilindraje: response.cilindraje_vehiculo, 
+    //   peso: response.peso_vehiculo,
+    //   cilindraje: response.cilindraje_vehiculo,
     //   serialMotor: response.serial_motor_vehiculo
     // };
-    let vehicle = vehicles.find(v => v.placa === placa) || []
+    let vehicle = vehicles.find((v) => v.placa === placa) || [];
 
-    console.log('PABLO',vehicle, vehicles)
+    console.log('PABLO', vehicle, vehicles);
 
-    return {status: 201, message: 'vehiculo enlazado de manera exitosa', vehicle};
-  } catch(e) {
+    return { status: 201, message: 'vehiculo enlazado de manera exitosa', vehicle };
+  } catch (e) {
     await client.query('ROLLBACK');
-    throw {status: 500, message: e.message}
+    throw { status: 500, message: e.message };
   } finally {
     client.release();
   }
-} 
+};
 
-export const unlinkVehicle = async(idVehiculo: number) => {
+export const unlinkVehicle = async (idVehiculo: number) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
     await client.query('UPDATE impuesto.vehiculo SET id_registro_municipal = null WHERE id_vehiculo = $1', [idVehiculo]);
     await client.query('DELETE FROM impuesto.vehiculo_contribuyente WHERE id_vehiculo = $1', [idVehiculo]);
     await client.query('COMMIT');
-    return {status: 201, message: 'vehiculo desenlazado de manera exitosa'};
-  } catch(e) {
+    return { status: 201, message: 'vehiculo desenlazado de manera exitosa' };
+  } catch (e) {
     await client.query('ROLLBACK');
-    throw {status: 500, message: e.message}
+    throw { status: 500, message: e.message };
   } finally {
     client.release();
   }
-} 
+};
 /**
  *
  * @param payload
@@ -408,12 +438,12 @@ export const updateVehicle = async (payload: Vehicle, id: number): Promise<Respo
       tipoCarroceria: response.tipo_carroceria_vehiculo,
       tipoCombustible: response.tipo_combustible_vehiculo,
       fechaUltimaActualizacion: response.fecha_ultima_actualizacion,
-      peso: response.peso_vehiculo, 
+      peso: response.peso_vehiculo,
       fechaInicio,
-      cilindraje: response.cilindraje_vehiculo, 
+      cilindraje: response.cilindraje_vehiculo,
       serialMotor: response.serial_motor_vehiculo,
       cedulaPropietario: response.cedula_propietario,
-      nombrePropietario: response.nombre_propietario
+      nombrePropietario: response.nombre_propietario,
     };
 
     return { status: 200, message: 'Vehiculo actualizado', vehiculo: vehicle };
@@ -463,15 +493,7 @@ export const updateVehicleDate = async ({ id, date, rim, taxpayer }) => {
     const application = (await client.query(queries.CREATE_TAX_PAYMENT_APPLICATION, [null, taxpayer])).rows[0];
     const rimData = (await client.query(queries.GET_RIM_DATA, [rim])).rows[0];
     const ghostSettlement = (
-      await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
-        application.id_solicitud,
-        0.0,
-        'VH',
-        'Pago ordinario',
-        { fecha: {year: fromDate.year()}, desglose: [{ vehiculo: id }] },
-        fromEndDate,
-        rimData?.id || null,
-      ])
+      await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [application.id_solicitud, 0.0, 'VH', 'Pago ordinario', { fecha: { year: fromDate.year() }, desglose: [{ vehiculo: id }] }, fromEndDate, rimData?.id || null])
     ).rows[0];
     (await client.query(queries.UPDATE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, 'ingresardatos_pi'])).rows[0].state;
     const state = (await client.query(queries.COMPLETE_TAX_APPLICATION_PAYMENT, [application.id_solicitud, 'aprobacioncajero_pi'])).rows[0].state;

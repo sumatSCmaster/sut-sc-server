@@ -13,6 +13,8 @@ export default class Pool {
         ssl: { rejectUnauthorized: false },
         max: 600,
         min: 100,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 5000,
         // query_timeout: 15000,
       };
       Pool.instance = new PgPool(opt);
