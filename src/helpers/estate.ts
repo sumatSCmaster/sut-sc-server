@@ -354,7 +354,7 @@ export const parishEstates = async ({ idParroquia }) => {
   }
 };
 
-export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, tipoMercado, tipoTierraUrbana, tipoConstruccion, dirDoc, claseTerreno, valorConstruccion, manzana, userId, clasificacion, uso, tenencia, contrato, clase, fechaVencimiento, mercados, tipoLocal, tipoAE, objetoQuiosco, tipoQuiosco, zonaQuiosco, areaServicios, sector, canonArrendamientoMercado, relativo }) => {
+export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosConstruccion, metrosTerreno, tipoInmueble, tipoMercado, tipoTierraUrbana, tipoConstruccion, dirDoc, claseTerreno, valorConstruccion, manzana, userId, clasificacion, uso, tenencia, contrato, clase, fechaVencimiento, mercados, tipoLocal, tipoAE, objetoQuiosco, tipoQuiosco, zonaQuiosco, areaServicios, sector, canonArrendamientoMercado, relativo, doc, tipoDocumento}) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -401,6 +401,9 @@ export const createBareEstate = async ({ codCat, direccion, idParroquia, metrosC
     await client.query(queries.INSERT_ESTATE_VALUE, [estate.id, (tipoTierraUrbana?.monto || 0) * metrosTerreno, (tipoConstruccion?.monto || 0) * metrosConstruccion ]);
     await client.query('INSERT INTO impuesto.inmueble_tributo (id_inmueble, id_clase_terreno, id_valor_construccion) VALUES ($1, $2, $3)', [estate.id, claseTerreno, valorConstruccion]);
     await client.query('INSERT INTO inmueble.detalle_codigo (id_inmueble, id_manzana, id_tipo_tierra_urbana, id_tipo_construccion) VALUES($1, $2, $3, $4)', [estate.id, manzana, tipoTierraUrbana?.id_tipo_tierra_urbana || 1, tipoConstruccion?.id_tipo_construccion || 1])
+    const ocupado = (await client.query(queries.GET_USER_ID_BY_RIF,[doc, tipoDocumento]))?.rows[0]?.id_contribuyente;
+    if(ocupado) 
+      await client.query('UPDATE inmueble_urbano SET ocupado = $2 WHERE id_inmueble = $1', [estate.id, ocupado]);
     await client.query('COMMIT');
 
     return { status: 200, inmueble: { ...estate, avaluos: (await client.query(queries.GET_APPRAISALS_BY_ID, [estate.id])).rows } };

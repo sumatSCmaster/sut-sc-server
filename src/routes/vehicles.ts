@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { authenticate } from 'passport';
 import { getIdByRif, getIdByRim } from '@utils/user';
 import { fulfill } from '@utils/resolver';
-import { getVehiclesByContributor, getBrands, getVehicleTypes, createVehicle, updateVehicle, deleteVehicle, checkVehicleExists, createVehicleForRim, linkVehicle, unlinkVehicle, updateVehicleDate, getVehiclesByContributorInternal } from '@helpers/vehicles';
+import { getVehiclesByContributor, getBrands, getVehicleTypes, createVehicle, updateVehicle, deleteVehicle, checkVehicleExists, createVehicleForRim, linkVehicle, unlinkVehicle, updateVehicleDate, getVehiclesByContributorInternal, getVehicleByPlate } from '@helpers/vehicles';
 
 const router = Router();
  
@@ -18,6 +18,13 @@ router.get('/getByRim/:rim', authenticate('jwt'), async (req, res) => {
   const { rim } = req.params;
   const { id_registro_municipal } = await getIdByRim(rim);
   const [err, data] = await fulfill(getVehiclesByContributorInternal(0, id_registro_municipal));
+  if (err) res.status(err.status).json(err);
+  if (data) res.status(data.status).json(data);
+});
+
+router.get('/getByPlate/:plate', authenticate('jwt'), async (req, res) => {
+  const { plate } = req.params;
+  const [err, data] = await fulfill(getVehicleByPlate(plate));
   if (err) res.status(err.status).json(err);
   if (data) res.status(data.status).json(data);
 });

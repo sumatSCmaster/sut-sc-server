@@ -479,10 +479,11 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
         estates.length > 0
           ? await Promise.all(
               estates.map(async (el) => {
-                const tarifaAseo = await getCleaningTariffForEstate({ estate: el, branchId: branch?.id_registro_municipal, client });
+                const tarifaAseo = el.id_contribuyente ? 0 : await getCleaningTariffForEstate({ estate: el, branchId: branch?.id_registro_municipal, client });
                 // const tarifaGas = await getGasTariffForEstate({ estate: el, branchId: branch?.id_registro_municipal, client });
+                const ocupado = el.id_contribuyente ? `${el.tipo_documento}-${el.documento}` : '';
                 const tarifaGas = 0;
-                return { id: el.id_inmueble, tipoInmueble: el.tipo_inmueble, codCat: el.cod_catastral, direccionInmueble: el.direccion, tarifaAseo, tarifaGas, deuda: debtSM };
+                return { id: el.id_inmueble, tipoInmueble: el.tipo_inmueble, codCat: el.cod_catastral, direccionInmueble: el.direccion, tarifaAseo, tarifaGas, deuda: debtSM, ocupado: ocupado };
               })
             )
           : !!branch?.id_registro_municipal

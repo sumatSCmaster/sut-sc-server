@@ -1931,7 +1931,8 @@ WHERE p.fecha_de_aprobacion BETWEEN $1 AND $3 AND p.metodo_pago LIKE 'EFECTIVO%'
   UPDATE_ALIQUOT_FOR_ACTIVITY: 'UPDATE impuesto.actividad_economica SET numero_referencia = $1, descripcion = $2, alicuota = $3, minimo_tributable = $4 WHERE id_actividad_economica = $5 RETURNING *',
   GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT: 'SELECT SUM(credito) as credito FROM impuesto.credito_fiscal WHERE id_persona = $1 AND concepto = $2',
   GET_ESTATES_FOR_JURIDICAL_CONTRIBUTOR:
-    'SELECT DISTINCT ON(ai.id_inmueble) * FROM impuesto.avaluo_inmueble ai INNER JOIN inmueble_urbano iu ON ai.id_inmueble = iu.id_inmueble WHERE id_registro_municipal = $1 AND anio = EXTRACT("year" FROM CURRENT_DATE)',
+    `SELECT DISTINCT ON(ai.id_inmueble) * FROM impuesto.avaluo_inmueble ai INNER JOIN inmueble_urbano iu ON ai.id_inmueble = iu.id_inmueble
+     LEFT JOIN impuesto.contribuyente c ON c.id_contribuyente = iu.ocupado WHERE id_registro_municipal = $1 AND anio = EXTRACT("year" FROM CURRENT_DATE)`,
   GET_ESTATE_APPRAISAL_BY_ID_AND_YEAR: 'SELECT DISTINCT ON(ai.id_inmueble) * FROM impuesto.avaluo_inmueble ai WHERE id_inmueble = $1 AND anio = $2',
   GET_ESTATES_DATA_FOR_CONTRIBUTOR: 'SELECT * FROM inmueble_urbano WHERE id_registro_municipal = $1',
   ECONOMIC_ACTIVITY_IS_EXONERATED:
@@ -1993,7 +1994,8 @@ WHERE p.fecha_de_aprobacion BETWEEN $1 AND $3 AND p.metodo_pago LIKE 'EFECTIVO%'
   GET_ECONOMIC_ACTIVITY_BY_RIM:
     'SELECT ae.id_actividad_economica as id, ae.numero_referencia as codigo, ae.descripcion, ae.alicuota, ae.minimo_tributable as "minimoTributable", aes.aplicable_desde as desde FROM impuesto.actividad_economica_sucursal aes INNER JOIN impuesto.actividad_economica ae USING (numero_referencia) WHERE id_registro_municipal = $1',
   GET_ESTATES_FOR_NATURAL_CONTRIBUTOR:
-    'SELECT DISTINCT ON (ai.id_inmueble) ai.*,iu.* FROM impuesto.avaluo_inmueble ai INNER JOIN inmueble_urbano iu ON ai.id_inmueble = iu.id_inmueble INNER JOIN impuesto.inmueble_contribuyente icn ON iu.id_inmueble = icn.id_inmueble WHERE icn.id_contribuyente = $1 AND anio = EXTRACT("year" FROM CURRENT_DATE)',
+    `SELECT DISTINCT ON (ai.id_inmueble) ai.*,iu.*,c.* FROM impuesto.avaluo_inmueble ai INNER JOIN inmueble_urbano iu ON ai.id_inmueble = iu.id_inmueble INNER JOIN impuesto.inmueble_contribuyente icn ON iu.id_inmueble = icn.id_inmueble
+    LEFT JOIN impuesto.contribuyente c ON c.id_contribuyente = iu.ocupado WHERE icn.id_contribuyente = $1 AND anio = EXTRACT("year" FROM CURRENT_DATE)`,
   // GET_AE_CLEANING_TARIFF: 'SELECT get_aseo AS monto FROM impuesto.get_aseo($1)',
   GET_AE_CLEANING_TARIFF: `SELECT tarifa FROM impuesto.tarifa_aseo JOIN impuesto.tarifa_aseo_sucursal USING(id_tarifa_aseo) WHERE id_registro_municipal = $1`,
   DELETE_SETTLEMENTS_BY_BRANCH_CODE_AND_RIM: 'DELETE FROM impuesto.liquidacion WHERE id_subramo IN (SELECT id_subramo FROM impuesto.subramo WHERE id_ramo = (SELECT id_ramo FROM impuesto.ramo WHERE codigo = $1)) AND id_registro_municipal = $2',
@@ -3603,6 +3605,18 @@ WHERE descripcion_corta IN ('AE','SM','IU','PP') or descripcion_corta is null
   JOIN impuesto.vehiculo_contribuyente USING(id_vehiculo)
   LEFT JOIN impuesto.liquidacion l ON v.id_liquidacion_fecha_inicio = l.id_liquidacion
   WHERE id_contribuyente = $1
+  ORDER BY v.id_vehiculo`,
+  GET_VEHICLES_BY_PLATE: `SELECT v.id_vehiculo AS id, mv.nombre AS marca, sv.id_subcategoria_vehiculo AS idSubcategoria, sv.descripcion AS subcategoria, v.modelo_vehiculo AS modelo,
+  v.placa_vehiculo AS placa, v.anio_vehiculo AS anio, v.color_vehiculo AS color, v.fecha_ultima_actualizacion AS "fechaUltimaActualizacion",
+  v.serial_carroceria_vehiculo AS "serialCarroceria", v.tipo_carroceria_vehiculo AS "tipoCarroceria",
+  v.tipo_combustible_vehiculo AS "tipoCombustible", v.peso_vehiculo AS peso, v.cilindraje_vehiculo AS cilindraje, v.serial_motor_vehiculo AS "serialMotor", cv.id_categoria_vehiculo AS idCategoria, cv.descripcion AS categoria, l.datos#>>'{fecha, year}' AS "fechaInicio", cedula_propietario AS "cedulaPropietario", nombre_propietario AS "nombrePropietario"
+  FROM impuesto.marca_vehiculo mv
+  INNER JOIN impuesto.vehiculo v USING (id_marca_vehiculo) 
+  INNER JOIN impuesto.subcategoria_vehiculo sv USING (id_subcategoria_vehiculo)
+  INNER JOIN impuesto.categoria_vehiculo cv USING (id_categoria_vehiculo)
+  JOIN impuesto.vehiculo_contribuyente USING(id_vehiculo)
+  LEFT JOIN impuesto.liquidacion l ON v.id_liquidacion_fecha_inicio = l.id_liquidacion
+  WHERE placa_vehiculo = $1
   ORDER BY v.id_vehiculo`,
   GET_VEHICLES_BY_MUNICIPAL_REFERENCE: `SELECT v.id_vehiculo AS id, mv.nombre AS marca, sv.id_subcategoria_vehiculo AS idSubcategoria, sv.descripcion AS subcategoria, v.modelo_vehiculo AS modelo,
   v.placa_vehiculo AS placa, v.anio_vehiculo AS anio, v.color_vehiculo AS color, v.fecha_ultima_actualizacion AS "fechaUltimaActualizacion",
