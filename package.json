@@ -7,6 +7,8 @@
     "definition": "./index.d.ts"
   },
   "scripts": {
+    "heroku-prebuild": "npm i -f",
+    "heroku-postbuild": "npm run build",
     "start": "node build/server.js",
     "start:debug": "node --inspect=9229 -r ts-node/register -r tsconfig-paths/register src/server.ts",
     "dev": "nodemon --inspect",
