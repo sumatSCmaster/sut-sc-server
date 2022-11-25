@@ -436,7 +436,7 @@ export const updateEstate = async ({ id, codCat, newCodCat, direccion, idParroqu
           return 0;
       }
     })(sector);
-    let estate = (await client.query(queries.GET_ESTATE_BY_CODCAT, [codCat])).rows[0];
+    let estate = (await client.query(queries.GET_ESTATE_BY_CODCAT,  [codCat])).rows[0];
     // const movimiento = await client.query(queries.ADD_MOVEMENT, [id, userId, 'inmueble_modificado', 'INMUEBLE']);
     if (estate.enlazado && tipoInmueble === 'RESIDENCIAL') {
       const commercialEstates = await client.query(queries.CHECK_IF_HAS_COMMERCIAL_ESTATES, [estate.id_registro_municipal]);
