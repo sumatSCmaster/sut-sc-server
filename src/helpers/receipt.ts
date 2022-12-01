@@ -21,6 +21,7 @@ export const generateReceipt = async (payload: { application: number }, clientPa
   const client = clientParam ? clientParam : await pool.connect();
   try {
     const applicationView = (await client.query(queries.GET_APPLICATION_VIEW_BY_ID, [payload.application])).rows[0];
+    const direccionRim = (await client.query(queries.GET_RIM_DIR_BY_SOL_ID, [payload.application]))?.rows[0]?.direccion;
     const payment = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID_GROUP_BY_PAYMENT_TYPE, [applicationView.id])).rows;
     const paymentRows = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID, [applicationView.id, 'IMPUESTO'])).rows;
     const paymentTotal = payment.reduce((prev, next) => prev + +next.monto, 0);
@@ -53,7 +54,7 @@ export const generateReceipt = async (payload: { application: number }, clientPa
           razonSocial: applicationView.razonSocial,
           tipoDocumento: applicationView.tipoDocumento,
           documentoIden: applicationView.documento,
-          direccion: applicationView.direccion,
+          direccion: direccionRim || applicationView.direccion,
           cajero: cashier?.[0]?.nombreCompleto,
           codigoRecibo: String(idRecibo).padStart(16, '0'),
           rim: referencia?.referencia_municipal,
