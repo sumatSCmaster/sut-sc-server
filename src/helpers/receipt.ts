@@ -142,6 +142,7 @@ export const generateReceiptAgreement = async (payload: { agreement: number }, c
   try {
     await client.query('REFRESH MATERIALIZED VIEW impuesto.solicitud_view');
     const applicationView = (await client.query(queries.GET_AGREEMENT_VIEW_BY_FRACTION_ID, [payload.agreement])).rows[0];
+    const direccionRim = (await client.query(queries.GET_RIM_DIR_BY_FRA_ID, [payload.agreement]))?.rows[0]?.direccion;
     const payment = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID_GROUP_BY_PAYMENT_TYPE_AGREEMENT, [applicationView.id_fraccion])).rows;
     const paymentRows = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID, [applicationView.id_fraccion, 'CONVENIO'])).rows;
     const paymentTotal = payment.reduce((prev, next) => prev + +next.monto, 0);
@@ -175,7 +176,7 @@ export const generateReceiptAgreement = async (payload: { agreement: number }, c
           razonSocial: applicationView.razonSocial,
           tipoDocumento: applicationView.tipoDocumento,
           documentoIden: applicationView.documento,
-          direccion: applicationView.direccion,
+          direccion: direccionRim || applicationView.direccion,
           cajero: cashier?.[0]?.nombreCompleto,
           codigoRecibo: String(idRecibo).padStart(16, '0'),
           rim: referencia?.referencia_municipal,

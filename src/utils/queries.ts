@@ -880,6 +880,12 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_RIM_DIR_BY_SOL_ID:`SELECT rm.direccion FROM impuesto.registro_municipal rm
   INNER JOIN impuesto.liquidacion l ON l.id_registro_municipal = rm.id_registro_municipal
   WHERE l.id_solicitud = $1`,
+  GET_RIM_DIR_BY_FRA_ID:`SELECT rm.direccion FROM impuesto.registro_municipal rm
+  INNER JOIN impuesto.liquidacion l ON l.id_registro_municipal = rm.id_registro_municipal
+  INNER JOIN impuesto.solicitud s ON s.id_solicitud = l.id_solicitud
+  INNER JOIN impuesto.convenio conv ON conv.id_solicitud = s.id_solicitud
+  INNER JOIN impuesto.fraccion f ON f.id_convenio = conv.id_convenio
+  WHERE f.id_fraccion = $1`,
   GET_AGREEMENT_VIEW_BY_FRACTION_ID: `SELECT *,f.monto AS "montoFraccion", f.fecha_aprobado AS "fechaAprobacionFraccion" 
   FROM impuesto.solicitud_view sv INNER JOIN impuesto.convenio c ON sv.id=c.id_solicitud 
   INNER JOIN impuesto.fraccion f USING (id_convenio) WHERE f.id_fraccion = $1;`,
