@@ -50,18 +50,18 @@ html
                 p #{datos.funcionario.referenciaMunicipal ? datos.funcionario.referenciaMunicipal : ' '} 
               div(style={'-webkit-flex': 2}).td.border-bottom.border-right.center
                 p #{datos.funcionario.nombreRepresentante ? datos.funcionario.nombreRepresentante : ''}
-          div.table(style={'font-size':'13px'})
-            div.tr
-              div(style={'-webkit-flex': 12}).th.border-bottom.center
-                p 
-                  b Datos del Timbre Fiscal 
-            div.tr
-              div(style={'-webkit-flex': 4}).td.border-bottom.border-right.center
-                p #{'Fecha: ' + datos.funcionario.fechaTimbre}
-              div(style={'-webkit-flex': 4}).td.border-bottom.border-right.center
-                p #{'Banco: ' + datos.funcionario.bancoTimbre}
-              div(style={'-webkit-flex': 4}).td.border-bottom.center
-                p #{'Monto: ' + datos.funcionario.montoTimbre} 
+          //- div.table(style={'font-size':'13px'})
+          //-   div.tr
+          //-     div(style={'-webkit-flex': 12}).th.border-bottom.center
+          //-       p 
+          //-         b Datos del Timbre Fiscal 
+          //-   div.tr
+          //-     div(style={'-webkit-flex': 4}).td.border-bottom.border-right.center
+          //-       p #{'Fecha: ' + datos.funcionario.fechaTimbre}
+          //-     div(style={'-webkit-flex': 4}).td.border-bottom.border-right.center
+          //-       p #{'Banco: ' + datos.funcionario.bancoTimbre}
+          //-     div(style={'-webkit-flex': 4}).td.border-bottom.center
+          //-       p #{'Monto: ' + datos.funcionario.montoTimbre} 
           div.table(style={'font-size':'13px'})
             div.tr
               div.th.center.border-bottom
@@ -104,4 +104,6 @@ html
             img(src="images/firma-hacienda.png", style={'margin-top':'-90px', 'z-index':'1',width:'450px'}, alt="", srcset="")
             img(src="images/firma-jefe-division-recaudacion.png", style={'margin-top':'-90px', 'z-index':'1',width:'450px'}, alt="", srcset="")
             img(src="images/firma-jefe-division-ae.png", style={'margin-top':'-90px', 'z-index':'1',width:'450px'}, alt="", srcset="")
+      include timbreFiscal-AE.pug
+      +timbreFiscalAE(datos.funcionario.fechaTimbre,datos.funcionario.bancoTimbre,datos.funcionario.montoTimbre)
       include footer.pug
