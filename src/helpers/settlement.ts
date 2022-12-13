@@ -1011,7 +1011,7 @@ export const getAgreementFractionById = async ({ id }): Promise<Solicitud & any>
   const client = await pool.connect();
   try {
     const application = (await client.query(queries.GET_AGREEMENT_FRACTION_BY_ID, [id])).rows[0];
-
+  
     const fraction = {
       id: application.id_fraccion,
       idConvenio: application.id_convenio,
@@ -1164,6 +1164,7 @@ export const getAgreementsForContributor = async ({ reference, docType, document
           ).rows[0]?.descripcion,
           monto: (await client.query(queries.APPLICATION_TOTAL_AMOUNT_BY_ID, [el.id_solicitud])).rows[0]?.monto_total,
           montoPetro: (await client.query(queries.APPLICATION_TOTAL_PETRO_AMOUNT_BY_ID, [el.id_solicitud]))?.rows[0].monto_total,
+          creditoFiscal: (await client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [contributor.tipo_contribuyente === 'JURIDICO' ? branch?.id_registro_municipal : contributor.id_contribuyente, contributor.tipo_contribuyente])).rows[0]?.credito || 0,
           porciones: await Promise.all((await client.query(queries.GET_FRACTIONS_BY_AGREEMENT_ID, [el.id_convenio])).rows.map(async (el) => await getAgreementFractionById({ id: el.id_fraccion }))),
         };
       })
@@ -2679,6 +2680,7 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
     await client.query('BEGIN');
     await client.query(queries.SET_AMOUNT_IN_BS_BASED_ON_PETRO_AGREEMENT, [fragment]);
     const fraccion = (await client.query(queries.GET_FRACTION_BY_AGREEMENT_AND_FRACTION_ID, [agreement, fragment])).rows[0];
+    const conv = (await client.query(queries.GET_AGREEMENT_BY_AGREEMENT_ID, [agreement])).rows[0];
     const pagoSum = payment.map((e) => +e.costo).reduce((e, i) => e + fixatedAmount(i), 0);
     if (fixatedAmount(pagoSum) < fixatedAmount(fraccion.monto)) throw { status: 401, message: 'La suma de los montos es insuficiente para poder insertar el pago' };
     const creditoPositivo = fixatedAmount(pagoSum) - fixatedAmount(+fraccion.monto);
@@ -2696,6 +2698,9 @@ export const addTaxApplicationPaymentAgreement = async ({ payment, agreement, fr
             el.concepto = 'CONVENIO';
             el.user = user.id;
             user.tipoUsuario === 4 ? await insertPaymentReference(el, fragment, client) : await insertPaymentCashier(el, fragment, client);
+            if (el.metodoPago === 'CREDITO_FISCAL') {
+              await updateFiscalCredit({ id: conv.id_solicitud, user, amount: -el.costo, client });
+            }
           } catch (e) {
             throw e;
           }
