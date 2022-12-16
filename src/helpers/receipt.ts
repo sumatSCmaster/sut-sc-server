@@ -141,7 +141,7 @@ export const generateReceiptAgreement = async (payload: { agreement: number }, c
   const client = clientParam ? clientParam : await pool.connect();
   try {
     await client.query('REFRESH MATERIALIZED VIEW impuesto.solicitud_view');
-    const applicationView = (await client.query(queries.GET_AGREEMENT_VIEW_BY_FRACTION_ID, [payload.agreement])).rows[0];
+    const applicationView = (await client.query(queries.GET_AGREEMENT_VIEW_BY_FRACTION_ID_FIX, [payload.agreement])).rows[0];
     const direccionRim = (await client.query(queries.GET_RIM_DIR_BY_FRA_ID, [payload.agreement]))?.rows[0]?.direccion;
     const payment = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID_GROUP_BY_PAYMENT_TYPE_AGREEMENT, [applicationView.id_fraccion])).rows;
     const paymentRows = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID, [applicationView.id_fraccion, 'CONVENIO'])).rows;
@@ -188,7 +188,7 @@ export const generateReceiptAgreement = async (payload: { agreement: number }, c
                 fechaAprobacion: applicationView.fechaAprobacionFraccion,
                 monto: applicationView.montoFraccion,
                 porcion: `${applicationView.porcion}/${applicationView.cantidad}`,
-                descripcion: `${applicationView.descripcionRamo} - ${applicationView.descripcionSubramo} (${date.format('MMMM')} ${date.format('YYYY')})`,
+                descripcion: applicationView.descripcionRamo ? `${applicationView.descripcionRamo} - ${applicationView.descripcionSubramo}  (${date.format('MMMM')} ${date.format('YYYY')})` : `Pago de Cuota (${date.format('MMMM')} ${date.format('YYYY')})`  ,
               },
             ],
           ],

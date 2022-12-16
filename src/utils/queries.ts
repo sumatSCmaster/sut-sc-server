@@ -889,6 +889,20 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   GET_AGREEMENT_VIEW_BY_FRACTION_ID: `SELECT *,f.monto AS "montoFraccion", f.fecha_aprobado AS "fechaAprobacionFraccion" 
   FROM impuesto.solicitud_view sv INNER JOIN impuesto.convenio c ON sv.id=c.id_solicitud 
   INNER JOIN impuesto.fraccion f USING (id_convenio) WHERE f.id_fraccion = $1;`,
+  GET_AGREEMENT_VIEW_BY_FRACTION_ID_FIX: `SELECT s.*, c.*, l.*, cv.*, f.*, l.id_liquidacion AS "idLiquidacion", s.id_solicitud AS "id", 
+  c.tipo_documento AS "tipoDocumento", c.razon_social AS "razonSocial", f.monto_ut AS "montoFraccion", 
+  f.fecha_aprobado AS "fechaAprobacionFraccion", rim.denominacion_comercial AS "denomComRim", 
+  r.descripcion AS "descripcionRamo", sr.descripcion AS "descripcionSubramo",
+  rim.direccion as "direccionRim" FROM impuesto.solicitud s 
+  LEFT JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud 
+  LEFT JOIN impuesto.contribuyente c ON c.id_contribuyente = s.id_contribuyente 
+  LEFT JOIN impuesto.registro_municipal rim ON rim.id_registro_municipal = l.id_registro_municipal 
+  LEFT JOIN impuesto.ramo r ON r.id_ramo = l.id_ramo
+  LEFT JOIN impuesto.subramo sr ON sr.id_subramo = l.id_subramo
+  INNER JOIN impuesto.convenio cv ON s.id_solicitud = cv.id_solicitud
+  INNER JOIN impuesto.fraccion f ON f.id_convenio = cv.id_convenio
+  WHERE f.id_fraccion = $1;
+  `,
   GET_LAST_FINE_FOR_LATE_APPLICATION:
     "SELECT * FROM impuesto.liquidacion l INNER JOIN impuesto.solicitud s \
     ON l.id_solicitud = s.id_solicitud INNER JOIN impuesto.contribuyente c ON s.id_contribuyente = c.id_contribuyente WHERE \

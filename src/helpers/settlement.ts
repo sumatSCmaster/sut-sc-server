@@ -3392,6 +3392,7 @@ export const approveContributorBenefits = async ({ data, client }: { data: any; 
     const benefittedUser = (await client.query(queries.GET_USER_IN_CHARGE_OF_BRANCH_BY_ID, [contributorWithBranch.id_registro_municipal])).rows[0];
     await client.query(queries.UPDATE_LAST_UPDATE_DATE, [contributorWithBranch.id_contribuyente]);
     // if (!benefittedUser) throw { status: 404, message: 'No existe un usuario encargado de esta sucursal' };
+    if()
     await Promise.all(
       beneficios.map(async (x) => {
         switch (x.tipoBeneficio) {
