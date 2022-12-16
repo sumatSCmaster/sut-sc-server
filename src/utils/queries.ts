@@ -888,7 +888,7 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   WHERE f.id_fraccion = $1`,
   GET_AGREEMENT_VIEW_BY_FRACTION_ID: `SELECT *,f.monto AS "montoFraccion", f.fecha_aprobado AS "fechaAprobacionFraccion" 
   FROM impuesto.solicitud_view sv INNER JOIN impuesto.convenio c ON sv.id=c.id_solicitud 
-  INNER JOIN impuesto.fraccion f USING (id_convenio) WHERE f.id_fraccion = $1;`,
+  INNER JOIN impuesto.fraccion f USING (id_convenio) WHERE f.id_fraccion = $1;` ,
   GET_AGREEMENT_VIEW_BY_FRACTION_ID_FIX: `SELECT s.*, c.*, l.*, cv.*, f.*, l.id_liquidacion AS "idLiquidacion", s.id_solicitud AS "id", 
   c.tipo_documento AS "tipoDocumento", c.razon_social AS "razonSocial", f.monto_ut AS "montoFraccion", 
   f.fecha_aprobado AS "fechaAprobacionFraccion", rim.denominacion_comercial AS "denomComRim", 
