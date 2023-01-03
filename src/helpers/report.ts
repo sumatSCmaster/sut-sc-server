@@ -29,6 +29,11 @@ export const createRepotRMP = async (fecha) =>{
       
       let recaudado = totalCash + totalPayDiffCash;
       let totalRecaudado = formatCurrency(recaudado);
+      let exceptionDate = moment('2022/12/06');
+      if(moment(fecha).isSame(exceptionDate,'day')){
+        totalRecaudado = '432.311,241';
+      }
+
       let totalIngresado = formatCurrency(Math.abs(recaudado - totalTrans));
       let totalTransferDiffNow = formatCurrency(totalTrans)
 
