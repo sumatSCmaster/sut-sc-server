@@ -897,8 +897,8 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
   LEFT JOIN impuesto.liquidacion l ON s.id_solicitud = l.id_solicitud 
   LEFT JOIN impuesto.contribuyente c ON c.id_contribuyente = s.id_contribuyente 
   LEFT JOIN impuesto.registro_municipal rim ON rim.id_registro_municipal = l.id_registro_municipal 
-  LEFT JOIN impuesto.ramo r ON r.id_ramo = l.id_ramo
   LEFT JOIN impuesto.subramo sr ON sr.id_subramo = l.id_subramo
+  LEFT JOIN impuesto.ramo r ON r.id_ramo = sr.id_ramo
   INNER JOIN impuesto.convenio cv ON s.id_solicitud = cv.id_solicitud
   INNER JOIN impuesto.fraccion f ON f.id_convenio = cv.id_convenio
   WHERE f.id_fraccion = $1;
