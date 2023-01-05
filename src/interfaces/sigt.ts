@@ -176,6 +176,7 @@ export interface Solicitud {
   aprobado: boolean;
   fecha: Date;
   monto: number;
+  montoPetro: number;
   responsable?: string;
   isRebaja?: boolean;
   liquidaciones: Liquidacion[];

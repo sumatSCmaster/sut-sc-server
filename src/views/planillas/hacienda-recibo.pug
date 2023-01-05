@@ -76,6 +76,9 @@ block content
           div(style={'-webkit-flex': '3'}).center
             p(style={'margin': '5px'})
               b MONTO Bs.
+          div(style={'-webkit-flex': '4'}).center
+            p(style={'margin': '5px'})
+              b DESCONTADO BS.
         hr.divider
         each item in datos.metodoPago
           div.ticket-data.break-page
@@ -84,5 +87,7 @@ block content
             div(style={'-webkit-flex': '3'}).center
               p(style={'margin': '5px'}) #{item.transacciones}
             div(style={'-webkit-flex': '3'}).center
-              p(style={'margin': '5px'}) #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.monto ? (item.monto) : 0)}                   
+              p(style={'margin': '5px'}) #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.monto ? (item.monto) : 0)} 
+            div(style={'-webkit-flex': '4'}).center
+              p(style={'margin': '5px'}) #{datos.diferencia}                  
 block footer

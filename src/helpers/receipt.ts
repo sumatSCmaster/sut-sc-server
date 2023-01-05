@@ -24,9 +24,10 @@ export const generateReceipt = async (payload: { application: number }, clientPa
     const direccionRim = (await client.query(queries.GET_RIM_DIR_BY_SOL_ID, [payload.application]))?.rows[0]?.direccion;
     const payment = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID_GROUP_BY_PAYMENT_TYPE, [applicationView.id])).rows;
     const paymentRows = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID, [applicationView.id, 'IMPUESTO'])).rows;
+    const paymentRowsDescDate = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID_DESC_DATE, [applicationView.id, 'IMPUESTO'])).rows;
     const paymentTotal = payment.reduce((prev, next) => prev + +next.monto, 0);
     const cashier = (await client.query(queries.GET_USER_INFO_BY_ID, [paymentRows[0]?.id_usuario])).rows;
-    const breakdownData = (await client.query(queries.GET_SETTLEMENT_INSTANCES_BY_APPLICATION_ID, [applicationView.id])).rows;
+    let breakdownData = (await client.query(queries.GET_SETTLEMENT_INSTANCES_BY_APPLICATION_ID, [applicationView.id])).rows;
     const referencia = (await pool.query(queries.REGISTRY_BY_SETTLEMENT_ID, [applicationView.idLiquidacion])).rows[0];
     const recibo = await client.query(queries.INSERT_RECEIPT_RECORD, [
       paymentRows[0]?.id_usuario,
@@ -40,11 +41,71 @@ export const generateReceipt = async (payload: { application: number }, clientPa
       return (await client.query(`SELECT recibo FROM impuesto.registro_recibo WHERE id_solicitud = $1 AND recibo != ''`, [applicationView.id])).rows[0].recibo;
     }
     const idRecibo = recibo.rows[0].id_registro_recibo;
+    // applications.map((a) => {
+    //   a.montout = a.porciones.reduce((prev, next) => prev + +next.montout, 0);
+    //   return {...a};
+    // })
+
+    breakdownData.map( async (el) => {
+      let base = 1;
+      const ramosPublicidad = [
+        'ART. 63-1 EXHIBICIÓN DE PROPAGANDA O PUBLICIDAD COMERCIAL A TRAVÉS DE VALLAS, POSTES PUBLICITARIOS, COLUMNAS INFORMATIVAS, CORTINAS Y ALFOMBRAS, INSTALACIONES PARA EL COMERCIO TEMPORAL Y EVENTUAL',
+        'ART. 63-5 EXHIBICIÓN DE PROPAGANDA O PUBLICIDAD COMERCIAL A TRAVÉS DE AVISOS FIJOS INTERNOS, NEVERAS, MUEBLES, ALFOMBRAS INTERNAS Y SIMILARES',
+        'ART. 63-15 EXHIBICIÓN DE PUBLICIDAD IMPRESA O SOBREPUESTA EN LA SUPERFICIE DE VEHÍCULOS DE USO PARTICULAR Y TAXIS'
+      ];
+      let ramo = el.descripcion || '';
+      let today = moment(paymentRowsDescDate[0]?.fecha_de_pago);
+      
+      if(ramo === 'VH' || ramo === 'PATENTE DE VEHICULO') {
+        if(el.datos?.fecha?.year === 2023 && today.get('month') <= 2 && today.get('year') === 2023){
+          base = base - 0.20;
+        }
+      }
+      else if(ramosPublicidad.includes(ramo)){
+        if(moment(el.fechaLiquidacion).get('month') <= 1 && moment(el.fechaLiquidacion).get('year') === 2023 && today.get('month') <= 1 && today.get('year') === 2023) {
+          if(today.get('month') === 0){
+            base = base - 0.15;
+          }
+          else if (today.get('month') === 1){
+            base = base - 0.10;
+          }
+        }
+      }
+      else if(ramo === 'IU' || ramo === 'INMUEBLES URBANOS'){
+        //check if all iu 2023 present
+        const firstS = breakdownData.find((l) => l.datos?.fecha?.month === 'Primer Trimestre' && l.datos?.fecha?.year === 2023 );
+        const secondS = breakdownData.find((l) => l.datos?.fecha?.month === 'Segundo Trimestre' && l.datos?.fecha?.year === 2023 );
+        const thirdS = breakdownData.find((l) => l.datos?.fecha?.month === 'Tercer Trimestre' && l.datos?.fecha?.year === 2023 );
+        const fourthS = breakdownData.find((l) => l.datos?.fecha?.month === 'Cuarto Trimestre' && l.datos?.fecha?.year === 2023 );
+        const anualS = breakdownData.find((l) => l.datos?.fecha?.month === 'Anual' && l.datos?.fecha?.year === 2023 );
+
+        const applyDiscount = ((firstS && secondS && thirdS && fourthS) || anualS) && (el.datos?.fecha?.year === 2023 && today.get('month') <= 2 && today.get('year') === 2023);
+
+        if(applyDiscount) {
+          const esEjido = (await client.query(queries.GET_ESTATE_BY_ID, [el.datos?.desglose[0]?.inmueble])).rows[0]?.clasificacion === 'EJIDO';
+          if(esEjido) {
+            base = base - 0.10;
+          }
+          else if (today.get('month') === 0) {
+            base = base - 0.25;
+          }
+          else if (today.get('month') === 1) {
+            base = base - 0.15;
+          }
+          else if (today.get('month') === 2) {
+            base = base - 0.10;
+          }
+        }
+      }
+      el.montoConDescuento = base !== 1 ? el.monto * base : 0;
+      el.diferencia = base !== 1 ? el.monto * (1 - base) : 0;
+      return {...el}
+    });
 
     return new Promise(async (res, rej) => {
       const pdfDir = resolve(__dirname, `../../archivos/hacienda/recibo/${applicationView.id}/cierre.pdf`);
       const dir = `${process.env.SERVER_URL}/hacienda/recibo/${applicationView.id}/recibo.pdf`;
-      let total = breakdownData.reduce((prev, next) => prev + +next.monto, 0);
+      let total = breakdownData.reduce((prev, next) => next.montoConDescuento !== 0 ? prev + +next.montoConDescuento : prev + +next.monto, 0);
       const linkQr = await qr.toDataURL(dev ? dir : `${process.env.AWS_ACCESS_URL}/hacienda/recibo/${applicationView.id}/recibo.pdf`, { errorCorrectionLevel: 'H' });
       const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-recibo.pug`), {
         moment: require('moment'),
@@ -65,7 +126,8 @@ export const generateReceipt = async (payload: { application: number }, clientPa
               return {
                 descripcion: `${row.datos.descripcion ? row.datos.descripcion : `${row.descripcionRamo} - ${row.descripcionSubramo}`} (${row.datos.fecha.month} ${row.datos.fecha.year}) ${direccion}`,
                 fecha: row.fechaLiquidacion,
-                monto: row.monto,
+                monto: row.montoConDescuento !== 0 ? row.montoConDescuento : row.monto,
+                diferencia: row.diferencia,
               };
             })),
             14
