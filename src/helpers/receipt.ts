@@ -97,7 +97,7 @@ export const generateReceipt = async (payload: { application: number }, clientPa
           }
         }
       }
-      el.montoConDescuento = base !== 1 ? round(el.monto * base,2) : 0;
+      el.montoConDescuento = base !== 1 ? el.monto * base : 0;
       el.diferencia = base !== 1 ? round(el.monto * (1 - base),2) : 0;
       return {...el}
     });
@@ -107,7 +107,7 @@ export const generateReceipt = async (payload: { application: number }, clientPa
       const dir = `${process.env.SERVER_URL}/hacienda/recibo/${applicationView.id}/recibo.pdf`;
       let total = breakdownData.reduce((prev, next) =>  prev + +next.monto, 0);
       let totalReal = breakdownData.reduce((prev, next) =>  prev + +( Number(next.montoConDescuento) !== 0 ? next.montoConDescuento : next.monto), 0);
-      let diferencia = total - totalReal;
+      let diferencia = round(total - totalReal,2);
       const linkQr = await qr.toDataURL(dev ? dir : `${process.env.AWS_ACCESS_URL}/hacienda/recibo/${applicationView.id}/recibo.pdf`, { errorCorrectionLevel: 'H' });
       const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-recibo.pug`), {
         moment: require('moment'),
