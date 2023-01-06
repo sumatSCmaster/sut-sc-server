@@ -53,7 +53,7 @@ export const generateReceipt = async (payload: { application: number }, clientPa
         'ART. 63-5 EXHIBICIÓN DE PROPAGANDA O PUBLICIDAD COMERCIAL A TRAVÉS DE AVISOS FIJOS INTERNOS, NEVERAS, MUEBLES, ALFOMBRAS INTERNAS Y SIMILARES',
         'ART. 63-15 EXHIBICIÓN DE PUBLICIDAD IMPRESA O SOBREPUESTA EN LA SUPERFICIE DE VEHÍCULOS DE USO PARTICULAR Y TAXIS'
       ];
-      let ramo = el.descripcion || '';
+      let ramo = el.descripcionRamo || '';
       let today = moment(paymentRowsDescDate[0]?.fecha_de_pago);
       
       if(ramo === 'VH' || ramo === 'PATENTE DE VEHICULO') {
