@@ -69,27 +69,27 @@ block content
     div(style={'text-align':'-webkit-right', 'width':'100%'}).break-page
       div.ticket.break-page(style={'margin':'2% 0', 'border':'2px solid #3387ca', 'width':'55%'})
         div.ticket-data.break-page
-          div(style={'-webkit-flex': '5'})
+          div(style={'-webkit-flex': '6'})
             p(style={'margin': '5px'})
               b METODO DE PAGO   
-          div(style={'-webkit-flex': '5'}).center
+          div(style={'-webkit-flex': '6'}).center
             p(style={'margin': '5px'})
               b TRANSACCIONES 
-          div(style={'-webkit-flex': '5'}).center
+          div(style={'-webkit-flex': '6'}).center
             p(style={'margin': '5px'})
               b MONTO Bs.
-          div(style={'-webkit-flex': '5'}).center
+          div(style={'-webkit-flex': '6'}).center
             p(style={'margin': '5px'})
               b DESCONTADO BS.
         hr.divider
         each item in datos.metodoPago
           div.ticket-data.break-page
-            div(style={'-webkit-flex': '5'})
+            div(style={'-webkit-flex': '6'})
               p(style={'margin': '5px'}) #{item.tipo === 'EFECTIVO PESO' || item.tipo === 'EFECTIVO DOLAR' || item.tipo === 'EFECTIVO EURO' ? 'EFECTIVO' : item.tipo}
-            div(style={'-webkit-flex': '5'}).center
+            div(style={'-webkit-flex': '6'}).center
               p(style={'margin': '5px'}) #{item.transacciones}
-            div(style={'-webkit-flex': '5'}).center
+            div(style={'-webkit-flex': '6'}).center
               p(style={'margin': '5px'}) #{new Intl.NumberFormat('de-DE',{minimumFractionDigits:2}).format(item.monto ? (item.monto) : 0)} 
-            div(style={'-webkit-flex': '5'}).center
+            div(style={'-webkit-flex': '6'}).center
               p(style={'margin': '5px'}) #{datos.diferencia}                  
 block footer

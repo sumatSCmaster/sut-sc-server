@@ -10,7 +10,7 @@ import { renderFile } from 'pug';
 import { errorMessageExtractor } from './errors';
 import * as pdf from 'html-pdf';
 import * as qr from 'qrcode';
-import { chunk } from 'lodash';
+import { chunk, round } from 'lodash';
 import { mainLogger } from '@utils/logger';
 import { collapseTextChangeRangesAcrossMultipleVersions } from 'typescript';
 const dev = process.env.NODE_ENV !== 'production';
@@ -97,8 +97,8 @@ export const generateReceipt = async (payload: { application: number }, clientPa
           }
         }
       }
-      el.montoConDescuento = base !== 1 ? el.monto * base : 0;
-      el.diferencia = base !== 1 ? el.monto * (1 - base) : 0;
+      el.montoConDescuento = base !== 1 ? round(el.monto * base,2) : 0;
+      el.diferencia = base !== 1 ? round(el.monto * (1 - base),2) : 0;
       return {...el}
     });
 
@@ -136,7 +136,7 @@ export const generateReceipt = async (payload: { application: number }, clientPa
           ),
           metodoPago: payment,
           total: totalReal,
-          credito: paymentTotal - totalReal,
+          credito: (paymentTotal - totalReal) < 0.01 ? 0 : paymentTotal - totalReal,
           diferencia: diferencia,
         },
       });
