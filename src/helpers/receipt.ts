@@ -97,7 +97,7 @@ export const generateReceipt = async (payload: { application: number }, clientPa
           }
         }
       }
-      el.montoConDescuento = base !== 1 ? el.monto * base : 0;
+      el.montoConDescuento = base !== 1 ? round(el.monto * base,3) : 0;
       el.diferencia = base !== 1 ? round(el.monto * (1 - base),2) : 0;
       return {...el}
     });
