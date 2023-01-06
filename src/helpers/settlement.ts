@@ -1562,9 +1562,9 @@ const getApplicationInstancesPayload = async ({ application, contributor, typeUs
     const [liquidacionesD, docsD, stateD, montoD, montoPetroD] = await Promise.all([liquidacionesP, docsP, stateP, montoP, montoPetroP]);
     const docs = docsD?.rows[0];
     const state = stateD?.rows[0].state;
-    const monto = montoD?.rows[0].monto_total;
-    const montoPetro = montoPetroD?.rows[0].monto_total;
-
+    // const monto = montoD?.rows[0].monto_total;
+    // const montoPetro = montoPetroD?.rows[0].monto_total;
+    
     const rimP = client.query('SELECT * FROM impuesto.registro_municipal WHERE id_registro_municipal = $1', [liquidacionesD.rows[0]?.id_registro_municipal]);
     const creditoFiscalP = client.query(queries.GET_FISCAL_CREDIT_BY_PERSON_AND_CONCEPT, [typeUser === 'JURIDICO' ? liquidacionesD.rows[0]?.id_registro_municipal : application.id_contribuyente, typeUser]);
     const interesMoratorioP = getDefaultInterestByApplication({ id: application.id_solicitud, date: application.fecha, state, client });
@@ -1574,11 +1574,15 @@ const getApplicationInstancesPayload = async ({ application, contributor, typeUs
     const rim = rimD?.rows[0]?.referencia_municipal;
     const creditoFiscal = creditoFiscalD?.rows[0]?.credito || 0;
 
-    const liquidaciones = await Promise.all(liquidacionesD.rows.filter((el) => el.tipoProcedimiento !== 'MULTAS').map((el) => getSettlementFormat(el, type, client)));
+    const paymentRowsDescDate = (await client.query(queries.GET_PAYMENT_FROM_REQ_ID_DESC_DATE, [application.id_solicitud, 'IMPUESTO'])).rows;
+
+    const liquidaciones = await Promise.all(liquidacionesD.rows.filter((el) => el.tipoProcedimiento !== 'MULTAS').map((el) => getSettlementFormat(el, type, client, paymentRowsDescDate, liquidacionesD)));
     const multas = await Promise.all(liquidacionesD.rows.filter((el) => el.tipoProcedimiento === 'MULTAS').map((el) => getFiningFormat(el, type, client)));
     const creditoFiscalRetencion = (await client.query(queries.GET_RETENTION_FISCAL_CREDIT_FOR_CONTRIBUTOR, [`${contributor.tipo_documento}${contributor.documento}`, rim])).rows[0]?.credito || 0;
     const responsable = (await client.query(queries.GET_APPLICATION_CREATOR_BY_MOVEMENT, [application.id_solicitud])).rows[0]?.nombre_completo;
 
+    const monto = liquidaciones.reduce((prev, next) => prev + +next.monto, 0);
+    const montoPetro = liquidaciones.reduce((prev, next) => prev + +(next.montoPetro || 0), 0);
 
     return {
       id: application.id_solicitud,
@@ -1609,14 +1613,64 @@ const getApplicationInstancesPayload = async ({ application, contributor, typeUs
   }
 };
 
-const getSettlementFormat = async (settlement, type, client: PoolClient) => {
+const getSettlementFormat = async (settlement, type, client: PoolClient, paymentRowsDescDate, liquidaciones) => {
   try {
+    let base = 1;
+    const ramosPublicidad = [
+      'ART. 63-1 EXHIBICIÓN DE PROPAGANDA O PUBLICIDAD COMERCIAL A TRAVÉS DE VALLAS, POSTES PUBLICITARIOS, COLUMNAS INFORMATIVAS, CORTINAS Y ALFOMBRAS, INSTALACIONES PARA EL COMERCIO TEMPORAL Y EVENTUAL',
+      'ART. 63-5 EXHIBICIÓN DE PROPAGANDA O PUBLICIDAD COMERCIAL A TRAVÉS DE AVISOS FIJOS INTERNOS, NEVERAS, MUEBLES, ALFOMBRAS INTERNAS Y SIMILARES',
+      'ART. 63-15 EXHIBICIÓN DE PUBLICIDAD IMPRESA O SOBREPUESTA EN LA SUPERFICIE DE VEHÍCULOS DE USO PARTICULAR Y TAXIS'
+    ];
+    let ramo = settlement.tipoProcedimiento || '';
+    let today = paymentRowsDescDate?.length > 0 ? moment(paymentRowsDescDate[0]?.fecha_de_pago) : moment();
+    
+    if(ramo === 'VH' || ramo === 'PATENTE DE VEHICULO') {
+      if(settlement.datos?.fecha?.year === 2023 && today.get('month') <= 2 && today.get('year') === 2023){
+        base = base - 0.20;
+      }
+    }
+    else if(ramosPublicidad.includes(ramo)){
+      if(moment(settlement.fecha_liquidacion).get('month') <= 1 && moment(settlement.fecha_liquidacion).get('year') === 2023 && today.get('month') <= 1 && today.get('year') === 2023) {
+        if(today.get('month') === 0){
+          base = base - 0.15;
+        }
+        else if (today.get('month') === 1){
+          base = base - 0.10;
+        }
+      }
+    }
+    else if(ramo === 'IU' || ramo === 'INMUEBLES URBANOS'){
+      //check if all iu 2023 present
+      const firstS = liquidaciones.find((l) => l.datos?.fecha?.month === 'Primer Trimestre' && l.datos?.fecha?.year === 2023 );
+      const secondS = liquidaciones.find((l) => l.datos?.fecha?.month === 'Segundo Trimestre' && l.datos?.fecha?.year === 2023 );
+      const thirdS = liquidaciones.find((l) => l.datos?.fecha?.month === 'Tercer Trimestre' && l.datos?.fecha?.year === 2023 );
+      const fourthS = liquidaciones.find((l) => l.datos?.fecha?.month === 'Cuarto Trimestre' && l.datos?.fecha?.year === 2023 );
+      const anualS = liquidaciones.find((l) => l.datos?.fecha?.month === 'Anual' && l.datos?.fecha?.year === 2023 );
+
+      const applyDiscount = ((firstS && secondS && thirdS && fourthS) || anualS) && (settlement.datos?.fecha?.year === 2023 && today.get('month') <= 2 && today.get('year') === 2023);
+
+      if(applyDiscount) {
+        const esEjido = (await client.query(queries.GET_ESTATE_BY_ID, [settlement.datos?.desglose[0]?.inmueble])).rows[0]?.clasificacion === 'EJIDO';
+        if(esEjido) {
+          base = base - 0.10;
+        }
+        else if (today.get('month') === 0) {
+          base = base - 0.25;
+        }
+        else if (today.get('month') === 1) {
+          base = base - 0.15;
+        }
+        else if (today.get('month') === 2) {
+          base = base - 0.10;
+        }
+      }
+    }
     return {
       id: settlement.id_liquidacion,
       ramo: settlement.tipoProcedimiento,
       fecha: settlement.datos.fecha,
-      monto: +settlement.monto,
-      montoPetro: type !== 'RETENCION' ? +settlement.monto_petro : null,
+      monto: +(Number(settlement.monto)*base),
+      montoPetro: type !== 'RETENCION' ? +(Number(settlement.monto_petro)*base) : null,
       esAgenteSENIAT: !!settlement.datos.esAgenteSENIAT,
       certificado: settlement.certificado,
       recibo: settlement.recibo,
