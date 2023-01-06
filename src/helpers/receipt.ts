@@ -97,7 +97,7 @@ export const generateReceipt = async (payload: { application: number }, clientPa
           }
         }
       }
-      el.montoConDescuento = base !== 1 ? round(el.monto * base,3) : 0;
+      el.montoConDescuento = base !== 1 ? round(el.monto * base,4) : 0;
       el.diferencia = base !== 1 ? round(el.monto * (1 - base),2) : 0;
       return {...el}
     });
@@ -106,7 +106,7 @@ export const generateReceipt = async (payload: { application: number }, clientPa
       const pdfDir = resolve(__dirname, `../../archivos/hacienda/recibo/${applicationView.id}/cierre.pdf`);
       const dir = `${process.env.SERVER_URL}/hacienda/recibo/${applicationView.id}/recibo.pdf`;
       let total = breakdownData.reduce((prev, next) =>  prev + +next.monto, 0);
-      let totalReal = breakdownData.reduce((prev, next) =>  prev + +( Number(next.montoConDescuento) !== 0 ? next.montoConDescuento : next.monto), 0);
+      let totalReal = round(breakdownData.reduce((prev, next) =>  prev + +( Number(next.montoConDescuento) !== 0 ? next.montoConDescuento : next.monto), 0),2);
       let diferencia = round(total - totalReal,2);
       const linkQr = await qr.toDataURL(dev ? dir : `${process.env.AWS_ACCESS_URL}/hacienda/recibo/${applicationView.id}/recibo.pdf`, { errorCorrectionLevel: 'H' });
       const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-recibo.pug`), {
@@ -128,7 +128,7 @@ export const generateReceipt = async (payload: { application: number }, clientPa
               return {
                 descripcion: `${row.datos.descripcion ? row.datos.descripcion : `${row.descripcionRamo} - ${row.descripcionSubramo}`} (${row.datos.fecha.month} ${row.datos.fecha.year}) ${direccion}`,
                 fecha: row.fechaLiquidacion,
-                monto: row.montoConDescuento !== 0 ? row.montoConDescuento : row.monto,
+                monto: row.montoConDescuento !== 0 ? round(row.montoConDescuento,2) : row.monto,
                 diferencia: row.diferencia,
               };
             })),
