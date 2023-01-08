@@ -440,7 +440,10 @@ export const getSettlements = async ({ document, reference, type, user }: { docu
       const lastSMPayment = (lastSM && moment([lastSM.datos?.fecha?.year, Months[lastSM.datos?.fecha?.month], 1]).add(1, 'M')) || moment().month(0);
       const pastMonthSM = (lastSM && moment(lastSM.fecha_liquidacion).subtract(1, 'M')) || moment().month(0);
       const SMDate = moment([lastSMPayment.year(), lastSMPayment.month(), 1]);
-      const dateInterpolationSM = Math.floor(now.diff(SMDate || moment([now.year(), 0, 1]), 'M'));
+      const promoDate = moment('2023-12-31');
+      const dateInterpolationSM = (now.get('month') <= 2 && now.get('year') === 2023) 
+         ? Math.floor(promoDate.diff(SMDate || moment([now.year(), 0, 1]), 'M'))
+         : Math.floor(now.diff(SMDate || moment([now.year(), 0, 1]), 'M'));
       console.log(dateInterpolationSM, 'MASTER SM')
       montoAcarreado.SM = {
         monto: lastSM && lastSM.mo_pendiente ? parseFloat(lastSM.mo_pendiente) : 0,
