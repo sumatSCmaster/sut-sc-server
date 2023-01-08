@@ -106,7 +106,7 @@ export const generateReceipt = async (payload: { application: number }, clientPa
       const pdfDir = resolve(__dirname, `../../archivos/hacienda/recibo/${applicationView.id}/cierre.pdf`);
       const dir = `${process.env.SERVER_URL}/hacienda/recibo/${applicationView.id}/recibo.pdf`;
       let total = breakdownData.reduce((prev, next) =>  prev + +next.monto, 0);
-      let totalReal = round(breakdownData.reduce((prev, next) =>  prev + +( Number(next.montoConDescuento) !== 0 ? next.montoConDescuento : next.monto), 0),2);
+      let totalReal = round(breakdownData.reduce((prev, next) =>  prev + +( next.montoConDescuento !== 0 ? next.montoConDescuento : next.monto), 0),2);
       let diferencia = round(total - totalReal,2);
       const linkQr = await qr.toDataURL(dev ? dir : `${process.env.AWS_ACCESS_URL}/hacienda/recibo/${applicationView.id}/recibo.pdf`, { errorCorrectionLevel: 'H' });
       const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-recibo.pug`), {
@@ -135,8 +135,8 @@ export const generateReceipt = async (payload: { application: number }, clientPa
             14
           ),
           metodoPago: payment,
-          total: totalReal,
-          credito: (paymentTotal - totalReal) < 0.01 ? 0 : paymentTotal - totalReal,
+          total: totalReal !== 0 ? totalReal : total,
+          credito: (paymentTotal - (totalReal !== 0 ? totalReal : total)) < 0.01 ? 0 : paymentTotal - (totalReal !== 0 ? totalReal : total),
           diferencia: diferencia,
         },
       });
