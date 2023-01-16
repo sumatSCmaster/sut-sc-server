@@ -1220,24 +1220,24 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
             montoPetro: type !== 'RETENCION' ? (await client.query(queries.APPLICATION_TOTAL_PETRO_AMOUNT_BY_ID, [el.id_solicitud]))?.rows[0].monto_total : null,
             liquidaciones: await Promise.all(
               liquidaciones
-                .filter((el) => el.tipoProcedimiento !== 'MULTAS')
-                .map(async (el) => {
+                .filter((li) => li.tipoProcedimiento !== 'MULTAS')
+                .map(async (li) => {
                   let base = 1;
                   const ramosPublicidad = [
                     'ART. 63-1 EXHIBICIÓN DE PROPAGANDA O PUBLICIDAD COMERCIAL A TRAVÉS DE VALLAS, POSTES PUBLICITARIOS, COLUMNAS INFORMATIVAS, CORTINAS Y ALFOMBRAS, INSTALACIONES PARA EL COMERCIO TEMPORAL Y EVENTUAL',
                     'ART. 63-5 EXHIBICIÓN DE PROPAGANDA O PUBLICIDAD COMERCIAL A TRAVÉS DE AVISOS FIJOS INTERNOS, NEVERAS, MUEBLES, ALFOMBRAS INTERNAS Y SIMILARES',
                     'ART. 63-15 EXHIBICIÓN DE PUBLICIDAD IMPRESA O SOBREPUESTA EN LA SUPERFICIE DE VEHÍCULOS DE USO PARTICULAR Y TAXIS'
                   ];
-                  let ramo = el.tipoProcedimiento || '';
+                  let ramo = li.tipoProcedimiento || '';
                   let today = paymentRowsDescDate?.length > 0 ? moment(paymentRowsDescDate[0]?.fecha_de_pago) : moment();
                   
                   if(ramo === 'VH' || ramo === 'PATENTE DE VEHICULO') {
-                    if(el.datos?.fecha?.year === 2023 && today.get('month') <= 2 && today.get('year') === 2023){
+                    if(li.datos?.fecha?.year === 2023 && today.get('month') <= 2 && today.get('year') === 2023){
                       base = base - 0.20;
                     }
                   }
                   else if(ramosPublicidad.includes(ramo)){
-                    if(moment(el.fecha_liquidacion).get('month') <= 1 && moment(el.fecha_liquidacion).get('year') === 2023 && today.get('month') <= 1 && today.get('year') === 2023) {
+                    if(moment(li.fecha_liquidacion).get('month') <= 1 && moment(li.fecha_liquidacion).get('year') === 2023 && today.get('month') <= 1 && today.get('year') === 2023) {
                       if(today.get('month') === 0){
                         base = base - 0.15;
                       }
@@ -1254,10 +1254,10 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
                     const fourthS = liquidaciones.find((l) => l.datos?.fecha?.month === 'Cuarto Trimestre' && l.datos?.fecha?.year === 2023 );
                     const anualS = liquidaciones.find((l) => l.datos?.fecha?.month === 'Anual' && l.datos?.fecha?.year === 2023 );
 
-                    const applyDiscount = ((firstS && secondS && thirdS && fourthS) || anualS) && (el.datos?.fecha?.year === 2023 && today.get('month') <= 2 && today.get('year') === 2023);
+                    const applyDiscount = ((firstS && secondS && thirdS && fourthS) || anualS) && (li.datos?.fecha?.year === 2023 && today.get('month') <= 2 && today.get('year') === 2023);
 
                     if(applyDiscount) {
-                      const esEjido = (await client.query(queries.GET_ESTATE_BY_ID, [el.datos?.desglose[0]?.inmueble])).rows[0]?.clasificacion === 'EJIDO';
+                      const esEjido = (await client.query(queries.GET_ESTATE_BY_ID, [li.datos?.desglose[0]?.inmueble])).rows[0]?.clasificacion === 'EJIDO';
                       if(esEjido) {
                         base = base - 0.10;
                       }
@@ -1272,17 +1272,21 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
                       }
                     }
                   }
+
+                  let sideMonto = li.datos?.valorPetro * li.monto_petro;
+                  console.log(li.datos)
+                  console.log(sideMonto)
                   
                   return {
-                    id: el.id_liquidacion,
-                    ramo: el.tipoProcedimiento,
-                    fecha: el.datos?.fecha,
-                    monto: +(Number(el.monto)*base),
-                    montoPetro: type !== 'RETENCION' ? +(Number(el.monto_petro)*base) : null,
-                    esAgenteSENIAT: !!el.datos.esAgenteSENIAT,
-                    certificado: el.certificado,
-                    recibo: el.recibo,
-                    desglose: await formatBreakdownForSettlement(el.ramo)({ settlement: el, client }),
+                    id: li.id_liquidacion,
+                    ramo: li.tipoProcedimiento,
+                    fecha: li.datos?.fecha,
+                    monto: +(Number(li.monto ? li.monto : sideMonto)*base),
+                    montoPetro: type !== 'RETENCION' ? +(Number(li.monto_petro)*base) : null,
+                    esAgenteSENIAT: !!li.datos.esAgenteSENIAT,
+                    certificado: li.certificado,
+                    recibo: li.recibo,
+                    desglose: await formatBreakdownForSettlement(li.ramo)({ settlement: li, client }),
                   };
                 })
             ),
@@ -1309,7 +1313,7 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
         })
     );
     application.map((a) => {
-      a.monto = a.liquidaciones.reduce((prev, next) => prev + +next.monto, 0);
+      a.monto = a.liquidaciones.reduce((prev, next) => prev + (+next.monto || 0), 0);
       a.montoPetro = a.liquidaciones.reduce((prev, next) => prev + +(next.montoPetro || 0), 0);
       return {...a};
     });
@@ -2680,6 +2684,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
     mainLogger.info('addTaxApplicationPayment -> pagoSum', pagoSum);
     mainLogger.info(`addTaxApplicationPayment -> ${payment.map((pay) => `concepto ${applicationType} referencia ${pay?.referencia} banco ${pay?.banco} metodo_pago ${pay.metodoPago}`).join(' , ')}`);
     console.log(pagoSum, +payment.map((e) => fixatedAmount(+e.costo)).reduce((e, i) => e + i, 0), +solicitud.monto_total, fixatedAmount(+solicitud.monto_total))
+    console.log(fixatedApplication, solicitud)
     if (pagoSum < fixatedAmount(+solicitud.monto_total)) throw { status: 401, message: `La suma de los montos es insuficiente para poder insertar el pago, con un déficit de Bs. ${fixatedAmount(+solicitud.monto_total) - pagoSum}` };
     const creditoPositivo = pagoSum - fixatedAmount(+solicitud.monto_total);
     await Promise.all(
@@ -2724,7 +2729,7 @@ export const addTaxApplicationPayment = async ({ payment, interest, application,
     console.log(application)
     await client.query(`REFRESH MATERIALIZED VIEW impuesto.solicitud_view`);
     if (user.tipoUsuario !== 4) {
-      if (creditoPositivo > 0) await updateFiscalCredit({ id: application, user, amount: creditoPositivo, client });
+      if (creditoPositivo >= 0.01) await updateFiscalCredit({ id: application, user, amount: creditoPositivo, client });
       const idVehSettlements = (await client.query(`SELECT id_liquidacion FROM impuesto.liquidacion WHERE id_solicitud = $1 AND id_subramo = 804 ORDER BY (datos#>>'{fecha, year}')::INT DESC LIMIT 1`, [application])).rows[0]?.id_liquidacion;
       applicationInstance.recibo = idVehSettlements ? await Promise.all([...(await createCertificateForApplication({idLiquidacion: idVehSettlements, media: 'solvencia', user})).media, generateReceipt({ application }, client)]) : await generateReceipt({ application }, client);
     }
