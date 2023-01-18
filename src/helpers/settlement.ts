@@ -1273,9 +1273,7 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
                     }
                   }
 
-                  let sideMonto = li.datos?.valorPetro * li.monto_petro;
-                  console.log(li.datos)
-                  console.log(sideMonto)
+                  let sideMonto = el.aprobado ? li.datos?.valorPetro * li.monto_petro : PETRO * li.monto_petro ;
                   
                   return {
                     id: li.id_liquidacion,
