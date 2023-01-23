@@ -1951,7 +1951,8 @@ const procedureInstances = switchcase({
   ) ts
         INNER JOIN tipo_tramite ON ts.tipotramite = tipo_tramite.id_tipo_tramite 
         INNER JOIN institucion ON institucion.id_institucion = tipo_tramite.id_institucion 
-        WHERE tipo_tramite.id_institucion = $1 AND tipoTramite = 37 AND ts.state IN ('enproceso', 'enrevision', 'finalizado') 
+        WHERE tipo_tramite.id_institucion = $1 AND tipoTramite = 37 
+        AND (ts.state IN ('enproceso', 'enrevision') OR (ts.state IN ('finalizado') AND EXTRACT(YEAR FROM fechacreacion::date) = EXTRACT(YEAR FROM CURRENT_DATE) ) )
         ORDER BY ts.fechacreacion DESC`,
   8: 'SELECT * FROM tramites_state_with_resources WHERE usuario = $1 AND tipotramite = 37 ORDER BY fechacreacion DESC LIMIT 500;',
 })(null);

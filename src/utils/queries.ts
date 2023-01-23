@@ -196,8 +196,10 @@ WHERE ttr.id_tipo_tramite=$1 AND ttr.fisico = false ORDER BY rec.id_recaudo',
       ts 
       
       INNER JOIN tipo_tramite ON ts.tipotramite = 
-      tipo_tramite.id_tipo_tramite INNER JOIN institucion ON institucion.id_institucion = 
-      tipo_tramite.id_institucion WHERE tipo_tramite.id_institucion = $1 AND state != 'denegado' ORDER BY ts.fechacreacion DESC;
+      tipo_tramite.id_tipo_tramite INNER JOIN institucion ON institucion.id_institucion = tipo_tramite.id_institucion 
+      WHERE tipo_tramite.id_institucion = $1 AND state != 'denegado' 
+      AND (ts.state NOT IN ('denegado', 'finalizado') OR (ts.state IN ('finalizado') AND EXTRACT(YEAR FROM fechacreacion::date) = EXTRACT(YEAR FROM CURRENT_DATE) ) )
+      ORDER BY ts.fechacreacion DESC;
 `,
   GET_IN_PROGRESS_PROCEDURES_INSTANCES_BY_INSTITUTION: `WITH condq AS (
       SELECT CASE WHEN $1 = 9 THEN '{3,9}'::int[] ELSE ARRAY[$1] END AS cond
