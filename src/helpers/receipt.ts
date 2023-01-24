@@ -126,7 +126,7 @@ export const generateReceipt = async (payload: { application: number }, clientPa
             await Promise.all(breakdownData.map(async(row) => {
               const direccion = row.descripcionRamo === 'INMUEBLES URBANOS' && row.datos?.desglose[0]?.inmueble ? (await client.query('SELECT direccion FROM inmueble_urbano WHERE id_inmueble = $1', [row.datos?.desglose[0]?.inmueble])).rows[0]?.direccion : '';
               return {
-                descripcion: `${row.datos.descripcion ? row.datos.descripcion : `${row.descripcionRamo} - ${row.descripcionSubramo}`} (${row.datos.fecha.month} ${row.datos.fecha.year}) ${direccion}`,
+                descripcion: `${ `${row.descripcionRamo} - ${row.descripcionSubramo} ${row.datos.descripcion ? ' - ' + row.datos.descripcion : ''}`} (${row.datos.fecha.month} ${row.datos.fecha.year}) ${direccion}`,
                 fecha: row.fechaLiquidacion,
                 monto: row.montoConDescuento !== 0 ? round(row.montoConDescuento,2) : row.monto,
                 diferencia: row.diferencia,

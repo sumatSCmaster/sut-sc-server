@@ -2576,6 +2576,7 @@ export const insertSettlements = async ({ process, user }) => {
             valorPetro: PETRO,
             fechaLiquidacion: moment().format('MM-DD-YYYY'),
             esMonotributo: process.esMonotributo ? true : undefined,
+            descripcion: process.desc,
           };
           const liquidacion = (
             await client.query(queries.CREATE_SETTLEMENT_FOR_TAX_PAYMENT_APPLICATION, [
@@ -3341,6 +3342,7 @@ export const createSpecialSettlement = async ({ process, user }) => {
         const datos = {
           desglose: el.desglose ? el.desglose.map((al) => breakdownCaseHandler(el.ramo, al)) : undefined,
           fecha: { month: el.fechaCancelada.month, year: el.fechaCancelada.year },
+          descripcion: process.desc,
         };
         const branch = (await client.query(`SELECT * FROM impuesto.ramo WHERE id_ramo = $1`, [el.ramo])).rows[0]?.descripcion;
         const subBranch = (await client.query(`SELECT * FROM impuesto.subramo WHERE id_subramo = $1`, [el.subramo])).rows[0]?.descripcion;
