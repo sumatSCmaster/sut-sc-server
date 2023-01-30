@@ -25,6 +25,7 @@ const queries = {
     'WITH usuario AS (SELECT id_usuario FROM usuario WHERE nombre_de_usuario = $1) \
        INSERT INTO recuperacion (id_usuario, token_recuperacion, usado) VALUES ((SELECT id_usuario FROM usuario), $2, false) RETURNING token_recuperacion;',
   GET_USER_BY_USERNAME: 'SELECT * FROM usuario WHERE nombre_de_usuario = $1;',
+  GET_USER_FUNC_BY_DOC: 'SELECT * FROM usuario WHERE nacionalidad = $1 AND cedula = $2 AND id_tipo_usuario != 4;',
   GET_USER_BY_ID: 'SELECT * FROM datos_usuario WHERE cedula = $1',
   GET_USER_INFO_BY_ID: 'SELECT nombre_completo as "nombreCompleto", nombre_de_usuario AS "nombreUsuario", direccion, cedula, nacionalidad, telefono FROM usuario WHERE id_usuario = $1;',
   GET_PHONES_FROM_USERNAME: 'SELECT numero FROM telefonos_usuario tu \
