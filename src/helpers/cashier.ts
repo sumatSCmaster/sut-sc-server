@@ -178,7 +178,7 @@ export const generateOneCashierReport = async (user:any, payload: { day: Date, t
     throw new Error('El usuario en sesión no tiene permisos.');
   }
   const client = await pool.connect();
-  const userF = (await client.query(queries.GET_USER_FUNC_BY_DOC, [payload.tipoDocumento, payload.documento]))?.rows[0]?.id_usuario;
+  const userF = (await client.query(queries.GET_USER_FUNC_BY_DOC, [payload.tipoDocumento, payload.documento]))?.rows[0];
   if (!userF) {
     throw new Error('No se encontró al cajero.');
   }
