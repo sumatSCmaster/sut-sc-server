@@ -67,7 +67,7 @@ export const generateReceipt = async (payload: { application: number }, clientPa
             base = base - 0.15;
           }
           else if (today.get('month') === 1){
-            base = base - 0.10;
+            base = base - 0.15;
           }
         }
       }
@@ -90,7 +90,7 @@ export const generateReceipt = async (payload: { application: number }, clientPa
             base = base - 0.25;
           }
           else if (today.get('month') === 1) {
-            base = base - 0.15;
+            base = base - 0.25;
           }
           else if (today.get('month') === 2) {
             base = base - 0.10;

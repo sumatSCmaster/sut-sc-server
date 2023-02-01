@@ -1242,7 +1242,7 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
                         base = base - 0.15;
                       }
                       else if (today.get('month') === 1){
-                        base = base - 0.10;
+                        base = base - 0.15;
                       }
                     }
                   }
@@ -1265,7 +1265,7 @@ export const getApplicationsAndSettlementsById = async ({ id, user }): Promise<S
                         base = base - 0.25;
                       }
                       else if (today.get('month') === 1) {
-                        base = base - 0.15;
+                        base = base - 0.25;
                       }
                       else if (today.get('month') === 2) {
                         base = base - 0.10;
@@ -1472,7 +1472,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
                         base = base - 0.15;
                       }
                       else if (today.get('month') === 1){
-                        base = base - 0.10;
+                        base = base - 0.15;
                       }
                     }
                   }
@@ -1495,7 +1495,7 @@ export const getApplicationsAndSettlements = async ({ user }: { user: Usuario })
                         base = base - 0.25;
                       }
                       else if (today.get('month') === 1) {
-                        base = base - 0.15;
+                        base = base - 0.25;
                       }
                       else if (today.get('month') === 2) {
                         base = base - 0.10;
@@ -1640,7 +1640,7 @@ const getSettlementFormat = async (settlement, type, client: PoolClient, payment
           base = base - 0.15;
         }
         else if (today.get('month') === 1){
-          base = base - 0.10;
+          base = base - 0.15;
         }
       }
     }
@@ -1663,7 +1663,7 @@ const getSettlementFormat = async (settlement, type, client: PoolClient, payment
           base = base - 0.25;
         }
         else if (today.get('month') === 1) {
-          base = base - 0.15;
+          base = base - 0.25;
         }
         else if (today.get('month') === 2) {
           base = base - 0.10;
