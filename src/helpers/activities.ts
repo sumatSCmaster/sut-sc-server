@@ -323,8 +323,20 @@ export const generatePatentDocument = async ({branchId}) => {
   const client = await pool.connect();
   try {
     const referencia = (await client.query(queries.GET_REGISTRO_MUNICIPAL_BY_ID, [ branchId ])).rows[0];
-    const economicActivities = (await pool.query(' SELECT ae.id_actividad_economica AS id, ae.numero_referencia as codigo, ae.descripcion, ae.alicuota, ae.minimo_tributable, aec.aplicable_desde AS desde FROM impuesto.actividad_economica_sucursal aec INNER JOIN impuesto.actividad_economica ae ON ae.numero_referencia = aec.numero_referencia WHERE id_registro_municipal = $1;', [branchId])).rows;
+    let economicActivities = (await pool.query(' SELECT ae.id_actividad_economica AS id, ae.numero_referencia as codigo, ae.descripcion, ae.alicuota, ae.minimo_tributable, aec.aplicable_desde AS desde FROM impuesto.actividad_economica_sucursal aec INNER JOIN impuesto.actividad_economica ae ON ae.numero_referencia = aec.numero_referencia WHERE id_registro_municipal = $1;', [branchId])).rows;
     const contribuyente = (await client.query('SELECT * FROM impuesto.contribuyente WHERE id_contribuyente = $1', [ referencia.id_contribuyente ])).rows[0];
+
+    const tramites = (await client.query(`
+    SELECT * FROM tramite 
+    WHERE id_tipo_tramite IN (28,36)
+    AND aprobado = true
+    AND datos->'funcionario'->>'referenciaMunicipal' = (SELECT referencia_municipal WHERE id_referencia_municipal = $1)
+    ORDER BY fecha_culminacion DESC`, [ branchId])).rows;
+
+    economicActivities.map((ae) => {
+      ae.fechaExp = tramites.find((t) => t.datos?.funcionario?.actividadesEconomicas.find((aec) => aec.id === ae.id))?.fecha_culminacion || null;
+      return ae;
+    });
 
     const html = renderFile(resolve(__dirname, `../views/planillas/hacienda-cert-LAE-SIM.pug`), {
       moment: require('moment'),
@@ -347,7 +359,7 @@ export const generatePatentDocument = async ({branchId}) => {
           fechaTimbre: referencia.fecha_timbre,
           bancoTimbre: referencia.banco_timbre,
           montoTimbre: referencia.monto_timbre
-        }
+        },
       },
       estado: 'finalizado',
     });

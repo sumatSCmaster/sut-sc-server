@@ -69,8 +69,11 @@ html
                   b ACTIVIDADES AUTORIZADAS
             each item in datos.funcionario.actividadesEconomicas
               div.tr
-                div(style={'width':'100%'}).td.border-bottom.top
+                div(style={'width':'60%'}).td.border-bottom.border-right.top
                   p #{item.descripcion}
+                div(style={'width':'40%'}).td.border-bottom.top
+                  p 
+                    b FECHA DE EXPEDICIÓN &nbsp; #{item.fechaExp ? moment(item.fechaExp).format('YYYY/MM/DD') : moment().format('YYYY/MM/DD')}
             div.tr
               div(style={'-webkit-flex': 1, '-webkit-justify-content': 'start'}).td.border-right.border-bottom.center
                 p 
@@ -82,7 +85,7 @@ html
             div.tr
               div(style={'-webkit-flex': 1, '-webkit-justify-content': 'start'}).td.border-right.border-bottom.center
                 p 
-                  b FECHA DE EXPEDICIÓN &nbsp; #{moment().format('YYYY/MM/DD')}
+                  b FECHA DE EXPEDICIÓN &nbsp; #{datos.fechaExp ? moment(fechaExp).format('YYYY/MM/DD') : moment().format('YYYY/MM/DD')}
             div.tr
               div(style={'-webkit-flex': 1, '-webkit-justify-content': 'start' }).td.border-right.border-bottom.center
                 b NOTA: 
