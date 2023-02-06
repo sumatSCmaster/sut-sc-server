@@ -330,7 +330,7 @@ export const generatePatentDocument = async ({branchId}) => {
     SELECT * FROM tramite 
     WHERE id_tipo_tramite IN (28,36)
     AND aprobado = true
-    AND datos->'funcionario'->>'referenciaMunicipal' = (SELECT referencia_municipal WHERE id_referencia_municipal = $1)
+    AND datos->'funcionario'->>'referenciaMunicipal' = (SELECT referencia_municipal FROM impuesto.registro_municipal WHERE id_registro_municipal = $1)
     ORDER BY fecha_culminacion DESC`, [ branchId])).rows;
 
     economicActivities.map((ae) => {
